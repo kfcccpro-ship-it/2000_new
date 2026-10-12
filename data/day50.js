@@ -1,0 +1,5 @@
+window.WORD_DATA={days:[{day:50,words:[
+["penetrate","침투하다"],["intrude","방해하다"],["notable","주목할 만한"],["grumble","불평하다"],["landfill","쓰레기 매립지"],["scrutiny","조사"],["reckless","부주의한"],["synthetic","합성의"],
+["productive","생산적인"],["outset","착수"],["peril","위험"],["rage","격노"],["kidnap","유괴"],["liable","책임이 있는"],["insane","정신 이상의"],["pitfall","함정"],["radius","반지름"],["hybrid","혼합"],["uncover","폭로하다"],["limb","사지"],
+["setback","좌절"],["prudent","신중한"],["solidify","굳어지다"],["grudge","원한"],["transcend","초월하다"],["tangle","얽히게 하다"],["subsidy","보조금"],["ambiguous","애매모호한"],["enthusiasm","열광"],["bankruptcy","파산"],["pollination","수분 (작용)"],["prosper","번영하다"],["phase","단계"],["veterinarian","수의사"],["counterattack","반격"],["cumulative","누적되는"],["infrastructure","사회 기반 시설"],["wound","부상을 입히다"],["discrete","분리된"],["fluctuation","변동"]
+].map((x,i)=>({day:50,no:i+1,english:x[0],answer:x[1]}))}]};

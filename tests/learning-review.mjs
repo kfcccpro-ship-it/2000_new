@@ -11,7 +11,8 @@ assert.equal(new Set(items.map(x=>x.no)).size,40);
 assert.equal(items.filter(x=>x.middle).map(x=>x.english).join(","),"wound");
 for(let i=0;i<40;i++){const w=items[i];assert.equal(w.no,i+1);assert.ok(w.emoji&&w.cue&&w.sentence[0]&&w.sentence[1]);}
 const a=browser();
-assert.match(a.app.innerHTML,/오늘 학습 시작/);
+assert.match(a.app.innerHTML,/id="startLearning"/);
+assert.match(a.app.innerHTML,/id="startEvaluation"/);
 a.begin();
 assert.equal(a.state().current.type,"new");
 assert.equal(a.state().current.wordKeys.length,40);
@@ -60,11 +61,11 @@ assert.equal(cross.window.WORD_DATA.days.find(d=>d.day===49).words[0].english,"e
 assert.equal(cross.window.WORD_DATA.days.find(d=>d.day===49).words[39].english,"utensil");
 assert.match(cross.app.innerHTML,/어제 오답 · DAY 50/);
 const c=browser();
-c.get("start").onclick();
+c.get("startLearning").onclick();
 assert.match(c.app.innerHTML,/교재 첫 번째 뜻/);
 assert.match(c.app.innerHTML,/한글 예시 문장/);
 assert.match(c.app.innerHTML,/id="nextStudy" disabled/);
-assert.match(c.app.innerHTML,/id="skipStudy"/);
+assert.doesNotMatch(c.app.innerHTML,/id="skipStudy"/);
 assert.equal(c.state().current,null);
 assert.equal(c.state().study.index,0);
 c.flushTimers();
@@ -81,4 +82,48 @@ assert.equal(clock.get("wordTimer").textContent,"10","timer should visibly decre
 clock.advance(10100);
 assert.equal(clock.state().current.answers["50:1"].status,"relearn","timeout should lead into existing error-learning gate");
 assert.equal(clock.state().stats["50:1"].lastWrong,"시간 초과");
-console.log("PASS daily learning: 40 sentence hints, middle-school evidence, admin DAY, previous-day due tag, learning stage, 15-second display");
+
+const separate=browser();
+separate.get("startLearning").onclick();
+separate.flushTimers();
+separate.get("nextStudy").onclick();
+assert.equal(separate.state().study.index,1);
+assert.equal(separate.state().current,null,"learning cannot create a test");
+assert.equal(separate.state().history.length,0);
+separate.navHome.onclick();
+assert.match(separate.app.innerHTML,/단어 이어하기/);
+assert.match(separate.app.innerHTML,/id="startEvaluation"/);
+separate.get("startEvaluation").onclick();
+assert.equal(separate.state().current.wordKeys.length,40);
+assert.equal(separate.state().study.index,1,"assessment preserves learning progress");
+separate.submit(1,separate.correct(1));
+assert.equal(separate.state().current.answers["50:1"].result,"correct");
+separate.navHome.onclick();
+assert.match(separate.app.innerHTML,/평가 이어하기/);
+separate.get("startLearning").onclick();
+assert.equal(separate.state().study.index,1);
+separate.navHome.onclick();
+separate.get("startEvaluation").onclick();
+assert.equal(separate.state().current.answers["50:1"].result,"correct","assessment resumes saved answers");
+separate.navHome.onclick();
+const afterReload=browser(new Map(separate.storage));
+assert.match(afterReload.app.innerHTML,/id="startLearning"/);
+assert.match(afterReload.app.innerHTML,/id="startEvaluation"/);
+const studyOnly=browser();
+studyOnly.get("startLearning").onclick();
+for(let i=0;i<40;i++){
+ studyOnly.flushTimers();
+ assert.equal(studyOnly.get("nextStudy").disabled,false);
+ studyOnly.get("nextStudy").onclick();
+}
+assert.equal(studyOnly.state().study.done,true,"study completion tracked");
+assert.equal(studyOnly.state().history.length,0,"study-only does not create a grade");
+assert.equal(studyOnly.state().current,null,"no automatic test on last learning card");
+assert.match(studyOnly.app.innerHTML,/학습 완료!/);
+assert.match(studyOnly.app.innerHTML,/id="learningGoEval"/);
+studyOnly.get("learningGoHome").onclick();
+assert.match(studyOnly.app.innerHTML,/id="startLearning"/);
+studyOnly.get("startEvaluation").onclick();
+assert.equal(studyOnly.state().current.type,"new");
+
+console.log("PASS two independent modes, study-only completion, resume, due review and timer");

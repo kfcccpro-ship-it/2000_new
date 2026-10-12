@@ -58,7 +58,7 @@ function browser(storage = new Map(), confirmAnswer = true) {
       }
     }
   };
-  const navTest = element(), navAdmin = element();
+  const navTest = element(), navAdmin = element(), navHome = element();
   const document = {
     documentElement: element(),
     body: {...element(), appendChild() {}},
@@ -71,6 +71,7 @@ function browser(storage = new Map(), confirmAnswer = true) {
       if (id === 'app') return app;
       if (id === 'navTest') return navTest;
       if (id === 'navAdmin') return navAdmin;
+      if (id === 'navHome') return navHome;
       if (!html.includes("id=\"" + id + "\"")) return null;
       if (!nodes.has(id)) {
         const n = element();
@@ -119,11 +120,11 @@ function browser(storage = new Map(), confirmAnswer = true) {
     c.querySelector('[data-in]').oninput?.();
     c.querySelector('[data-sub]').onclick();
   };
-  const begin = () => {get('start').onclick();get('skipStudy').onclick();};
+  const begin = () => get('startEvaluation').onclick();
   const next = () => {assert.equal(get('next').disabled, false, 'STEP is blocked'); get('next').onclick();};
   const resetDay = () => {navAdmin.onclick();get('manualDay').value = '50';get('applyManualDay').onclick();navTest.onclick();};
   const correct = (n) => window.WORD_DATA.days[0].words[n - 1].answer;
-  return {app, window, document, navTest, navAdmin, storage, state,
+  return {app, window, document, navTest, navAdmin, navHome, storage, state,
     card, get, submit, begin, next, resetDay, correct,
     flushTimers() {const q=[...timeouts.values()].sort((a,b)=>a.delay-b.delay);timeouts.clear();for(const task of q)task.fn();},
     advance(ms) {fakeNow+=ms;for(const [id,fn] of [...intervals])if(intervals.has(id))fn();},

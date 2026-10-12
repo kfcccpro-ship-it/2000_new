@@ -242,3 +242,37 @@ body.keyboardActive .footer{position:relative;bottom:auto}
  .wordGrid.focusOne .scribble{font-size:30px}
 }
 @media(prefers-reduced-motion:reduce){.timerRail span{transition:none}}
+
+/* v0.2.2: two independent learner modes inside one app */
+#navHome{display:none}
+body.isStudentInside:not(.isAdminRoute) #navHome{display:inline-flex;align-items:center}
+.modeHero{max-width:1050px;min-height:calc(var(--app-vh,100dvh) - 130px);padding:28px 24px 50px}
+.modeHero .kioskDay{font-size:clamp(68px,9vw,112px);margin:0}
+.modeHero .kioskMeta{margin:0;font-size:clamp(18px,2.4vw,25px)}
+.heroModeGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;width:min(940px,100%);margin-top:38px}
+.modeChoice{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;gap:14px;min-height:234px;width:100%;padding:31px 38px 35px;border:2px solid #376b6b;border-radius:24px;color:#243c3c;cursor:pointer;box-shadow:0 6px 0 #34595b;transition:transform .14s ease,box-shadow .14s ease,background-color .14s ease}
+.modeChoice:focus-visible{outline:4px solid #267e86;outline-offset:4px}
+.modeChoice:disabled{opacity:.46;cursor:not-allowed;box-shadow:none}
+.modeChoice:not(:disabled):active{transform:translateY(4px);box-shadow:0 2px 0 #34595b}
+.choiceLearn{background:#fffdf9}
+.choiceEval{background:#aed2d0}
+.choiceNumber{font-size:16px;line-height:1.35;font-weight:850;color:#567473}
+.choiceTitle{font-size:clamp(43px,5vw,60px);line-height:1.1;font-weight:950;letter-spacing:-.05em}
+.choiceDescription{font-size:16px;line-height:1.55;color:#456262;font-weight:740;max-width:26ch;overflow-wrap:anywhere}
+.choiceArrow{position:absolute;right:25px;bottom:19px;font-size:34px;font-weight:650;color:#2f5554}
+.modeHeroNote{font-size:14px;color:#71817d;margin-top:29px;font-weight:720}
+.modeCompleteNote{max-width:480px;word-break:keep-all}
+.modeAfterButton{width:min(490px,100%);min-height:55px;margin-top:14px;background:transparent;border:1px solid #98b2ae;font-size:17px}
+@media(max-width:760px){
+  .modeHero{padding:22px 10px 32px;min-height:calc(var(--app-vh,100dvh) - 98px)}
+  .modeHero .kioskDay{font-size:clamp(60px,13vw,88px)}
+  .modeHero .kioskMeta{font-size:17px}
+  .heroModeGrid{grid-template-columns:1fr;gap:15px;margin-top:27px}
+  .modeChoice{min-height:165px;border-radius:21px;padding:19px 26px 23px;gap:7px}
+  .choiceNumber{font-size:13px}
+  .choiceTitle{font-size:45px}
+  .choiceDescription{font-size:14px;max-width:90%}
+  .choiceArrow{right:20px;bottom:14px;font-size:27px}
+  .modeHeroNote{font-size:12px;margin-top:23px}
+}
+@media(prefers-reduced-motion:reduce){.modeChoice{transition:none}}

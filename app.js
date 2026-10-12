@@ -1,7 +1,7 @@
 (()=>{"use strict";
-const VER="0.2.1",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
+const VER="0.2.2",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin"),navHome=document.getElementById("navHome");
 const DATA=window.WORD_DATA;let route="test";let st=load();let activeInterval=null;let revealTimers=[];
-function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null,study:null,reviewPlan:{}}}
+function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null,study:null,reviewPlan:{},activeMode:null}}
 function load(){try{const s=Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"));if(!s.reviewPlan||typeof s.reviewPlan!=="object"||Array.isArray(s.reviewPlan))s.reviewPlan={};return s}catch(e){return base()}}
 function save(){localStorage.setItem(KEY,JSON.stringify(st))}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
@@ -59,18 +59,20 @@ function learnKeys(){
 function startLearning(){
   const d=day(st.nextDay);
   if(!isReview()&&!d)return alert("DAY "+st.nextDay+" 데이터가 아직 등록되지 않았습니다.");
-  if(!st.study||!Array.isArray(st.study.keys)||st.study.done)st.study={day:st.nextDay,keys:learnKeys(),index:0,created:Date.now(),done:false};
-  save();studyScreen();
+  if(!st.study||!Array.isArray(st.study.keys)||st.study.done)st.study={day:st.nextDay,keys:learnKeys(),index:0,created:Date.now(),done:false,review:isReview()};
+  st.activeMode="study";save();studyScreen();
 }
 function studyScreen(){
-  pauseActiveTimers();
-  const s=st.study;if(!s||s.done)return home();
-  if(s.index>=s.keys.length){s.done=true;st.study=null;save();return start()}
+  pauseActiveTimers();setStudentInside(true);
+  const s=st.study;if(!s)return home();
+  if(s.done)return studyComplete();
+  if(s.index>=s.keys.length){s.done=true;s.completedAt=localDate();st.activeMode="studyDone";save();return studyComplete()}
+  st.activeMode="study";save();
   const k=s.keys[s.index],w=byKey(k),meta=studyInfo(w),wrong=st.stats[k]?.wrong||0;
   if(!w){s.index++;save();return studyScreen()}
   const first=meta?.sentence?.[0]||"",last=meta?.sentence?.[1]||"";
   app.innerHTML=`<section class="learning" aria-label="한 단어씩 익히기">
-    <div class="learningHeader"><span class="chip">${isReview()?"복습 학습":"DAY "+s.day}</span><span>학습 ${s.index+1} / ${s.keys.length}</span></div>
+    <div class="learningHeader"><span class="chip">${s.review?"복습 학습":"DAY "+s.day}</span><span>학습 ${s.index+1} / ${s.keys.length}</span></div>
     <div class="learningLine" role="progressbar" aria-label="학습 단어 진행률" aria-valuemin="0" aria-valuemax="${s.keys.length}" aria-valuenow="${s.index+1}"><i style="width:${(s.index+1)/s.keys.length*100}%"></i></div>
     <div class="learningCue">${esc(meta?.cue||"뜻을 떠올려 보세요")}</div>
     <div class="learningEmoji" role="img" aria-label="${esc(meta?.cue||"단어 이미지 단서")}">${esc(meta?.emoji||"📖")}</div>
@@ -82,7 +84,6 @@ function studyScreen(){
       <p><span id="sentenceFirst" hidden>${esc(first)}</span><span id="sentenceLast" hidden>${esc(last)}</span></p>
     </div>
     <button class="primary learningNext" id="nextStudy" disabled>다음 단어 →</button>
-    <button class="textLink" id="skipStudy">이미 학습했다면 바로 평가하기</button>
     <p class="learningMemory">간격을 두고 다시 떠올리면 기억에 더 오래 남아요.</p>
   </section>`;
   const later=(id,ms)=>revealTimers.push(setTimeout(()=>{const el=document.getElementById(id);if(el)el.hidden=false},ms));
@@ -91,7 +92,26 @@ function studyScreen(){
   later("sentenceLast",4400);
   revealTimers.push(setTimeout(()=>{const b=document.getElementById("nextStudy");if(b)b.disabled=false},4600));
   document.getElementById("nextStudy").onclick=()=>{if(document.getElementById("nextStudy").disabled)return;s.index++;save();studyScreen()};
-  document.getElementById("skipStudy").onclick=()=>{if(!confirm("학습 단계를 건너뛰고 필기평가를 시작할까요?"))return;st.study=null;save();start()};
+}
+function studyComplete(){
+  pauseActiveTimers();setStudentInside(true);
+  const s=st.study;if(!s||!s.done)return home();
+  st.activeMode="studyDone";save();
+  app.innerHTML=`<section class="complete studyComplete" aria-label="학습 완료">
+    <div class="completeSymbol" aria-hidden="true">✓</div>
+    <h1>학습 완료!</h1>
+    <p>DAY ${s.day} · ${s.keys.length}단어를 익혔습니다.</p>
+    <p class="modeCompleteNote">평가는 별도입니다. 평가를 시작하기 전까지 채점 기록이나 오답 횟수는 바뀌지 않습니다.</p>
+    <button id="learningGoHome" class="primary completeButton" type="button">처음 화면으로 <span aria-hidden="true">→</span></button>
+    <button id="learningGoEval" class="secondary modeAfterButton" type="button">이제 평가하기</button>
+  </section>`;
+  document.getElementById("learningGoHome").onclick=goHome;
+  document.getElementById("learningGoEval").onclick=enterEvaluation;
+}
+function enterEvaluation(){
+  st.activeMode="evaluation";save();
+  if(st.current&&!st.current.done)return session();
+  return start();
 }
 function runWordClock(k,c,token){
   if(typeof setInterval!=="function")return;
@@ -129,33 +149,76 @@ function setupDeviceCompat(){
   document.addEventListener("focusin",e=>{if(!e.target.matches?.(".scribble"))return;setTimeout(()=>e.target.closest(".card")?.scrollIntoView({block:"center",behavior:"smooth"}),140)});
 }
 setupDeviceCompat();
-function setRoute(r){pauseActiveTimers();route=r;navTest.classList.toggle("active",r==="test");navAdmin.classList.toggle("active",r==="admin");document.body.classList.toggle("isAdminRoute",r==="admin");render()}
-navTest.onclick=()=>setRoute("test");navAdmin.onclick=()=>setRoute("admin");
+function setStudentInside(inside){document.body.classList.toggle("isStudentInside",!!inside)}
+function goHome(){
+  pauseActiveTimers();route="test";
+  navTest.classList.add("active");navAdmin.classList.remove("active");
+  document.body.classList.remove("isAdminRoute");
+  home();
+}
+function setRoute(r){
+  pauseActiveTimers();route=r;
+  navTest.classList.toggle("active",r==="test");
+  navAdmin.classList.toggle("active",r==="admin");
+  document.body.classList.toggle("isAdminRoute",r==="admin");
+  if(r==="admin")setStudentInside(false);
+  render();
+}
+navTest.onclick=goHome;navHome.onclick=goHome;navAdmin.onclick=()=>setRoute("admin");
 function render(){route==="admin"?admin():test()}
-function test(){if(st.current&&!st.current.done)return session();if(st.study&&!st.study.done)return studyScreen();home()}
+function test(){
+  if(st.activeMode==="home")return home();
+  if(st.activeMode==="studyDone"&&st.study?.done)return studyComplete();
+  if(st.activeMode==="study"&&st.study&&!st.study.done)return studyScreen();
+  if(st.activeMode==="evaluation"&&st.current&&!st.current.done)return session();
+  // v0.2.1 legacy backups may not contain activeMode.
+  if(!st.activeMode&&st.current&&!st.current.done)return session();
+  if(!st.activeMode&&st.study&&!st.study.done)return studyScreen();
+  home();
+}
+
 function home(){
-  pauseActiveTimers();
-  const rv=isReview(),d=day(st.nextDay),pool=uniqueKeys([...priorReviewKeys(),...(rv?reviewPool():[])]),canStart=rv||!!d;
-  const count=rv?pool.length:d?.words.length||0;
-  app.innerHTML=`<section class="kioskHome">
-    <div class="kioskEyebrow">${rv?"기억을 다지는 날":"오늘의 DAY 학습"}</div>
-    <div class="kioskDay">${rv?"오답 복습":"DAY "+st.nextDay}</div>
+  pauseActiveTimers();setStudentInside(false);
+  st.activeMode="home";save();
+  const rv=isReview(),d=day(st.nextDay),due=priorReviewKeys(),
+    pool=uniqueKeys([...due,...(rv?reviewPool():[])]),
+    activeStudy=!!(st.study&&!st.study.done),
+    activeEval=!!(st.current&&!st.current.done),
+    canLearn=rv||!!d||activeStudy,canEval=rv||!!d||activeEval,
+    count=rv?pool.length:d?.words.length||0;
+  const learnSub=activeStudy?`DAY ${st.study.day} · ${st.study.index} / ${st.study.keys.length}단어 이어하기`:
+    (st.study?.done&&st.study.day===st.nextDay?"이 DAY 학습 완료 · 다시 학습 가능":"그림 · 첫 번째 뜻 · 한글 예문");
+  const evalSub=activeEval?`평가 이어하기 · STEP ${st.current.step+1} / ${totalSteps(st.current)}`:
+    "한글 뜻 필기 · 15초 · 오답 복습";
+  app.innerHTML=`<section class="kioskHome modeHero">
+    <div class="kioskEyebrow">${rv?"오늘은 복습하는 날":"오늘의 영어단어"}</div>
+    <h1 class="kioskDay">${rv?"오답 복습":"DAY "+st.nextDay}</h1>
     <div class="kioskRule" aria-hidden="true"></div>
-    <div class="kioskMeta">${rv?(count?count+"단어 복습":"복습할 오답이 없습니다"):count+"단어 · 8단어 × 5 STEP"}</div>
-    ${pool.length?`<p class="dueNotice">지난 학습·복습 예정 단어 ${pool.length}개를 먼저 확인합니다. <b>원래 DAY도 함께 표시됩니다.</b></p>`:""}
-    <button type="button" class="primary kioskStart" id="start" ${canStart?"":"disabled"}>${rv?"복습 학습 시작":"오늘 학습 시작"} <span aria-hidden="true">→</span></button>
-    <div class="kioskHint">그림과 문장을 짧게 익힌 뒤<br>한글 뜻을 직접 쓰는 평가로 넘어갑니다.</div>
-    ${!rv&&!d?'<p class="kioskWarn" role="status">선택한 DAY의 단어 데이터가 아직 없습니다. 보호자 설정에서 DAY 50을 선택하세요.</p>':""}
-    <details class="kioskAdjust">
-      <summary>오늘 일정 보기</summary><p class="kioskCycle">신규 3일 · 4일차 복습 / 오답은 다음 학습일에 우선 표시</p>
-    </details>
-    <div class="memoryMotto">조금 잊어도 괜찮아요. 다시 떠올리는 순간이 복습입니다.</div>
+    <p class="kioskMeta">${rv?(count?count+"단어 복습":"복습할 오답이 없습니다"):count+"단어 · 8단어 × 5 STEP"}</p>
+    ${due.length?`<p class="dueNotice">이전에 틀린 단어 ${due.length}개도 포함됩니다. <b>원래 DAY를 표시합니다.</b></p>`:""}
+    <div class="heroModeGrid" aria-label="학습 또는 평가 선택">
+      <button id="startLearning" type="button" class="modeChoice choiceLearn" ${canLearn?"":"disabled"}>
+        <span class="choiceNumber">01 · 익히기</span>
+        <strong class="choiceTitle">학습</strong>
+        <span class="choiceDescription">${esc(learnSub)}</span>
+        <span class="choiceArrow" aria-hidden="true">→</span>
+      </button>
+      <button id="startEvaluation" type="button" class="modeChoice choiceEval" ${canEval?"":"disabled"}>
+        <span class="choiceNumber">02 · 기억 확인</span>
+        <strong class="choiceTitle">평가</strong>
+        <span class="choiceDescription">${esc(evalSub)}</span>
+        <span class="choiceArrow" aria-hidden="true">→</span>
+      </button>
+    </div>
+    ${!rv&&!d&&!activeStudy&&!activeEval?'<p class="kioskWarn" role="status">이 DAY의 단어는 아직 등록되지 않았습니다. 보호자 설정에서 DAY 49 또는 50을 지정하세요.</p>':""}
+    <p class="modeHeroNote">학습과 평가는 따로 진행할 수 있어요.</p>
   </section>`;
-  document.getElementById("start").onclick=()=>startLearning();
+  document.getElementById("startLearning").onclick=startLearning;
+  document.getElementById("startEvaluation").onclick=enterEvaluation;
 }
 
 function start(){
-  pauseActiveTimers();
+  pauseActiveTimers();setStudentInside(true);st.activeMode="evaluation";
   const due=priorReviewKeys(),rv=isReview();
   let keys,bookDay;
   if(rv){keys=uniqueKeys([...due,...reviewPool()])}
@@ -164,7 +227,6 @@ function start(){
     if(!d)return alert("DAY "+st.nextDay+"의 단어가 아직 등록되지 않았습니다.");
     bookDay=d.day;keys=uniqueKeys([...due,...d.words.map(key)]);
   }
-  st.study=null;
   st.current={id:Date.now(),type:rv?"review":"new",bookDay:bookDay||null,dueKeys:due,
     wordKeys:keys,phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false};
   save();session();
@@ -174,7 +236,7 @@ function phaseKeys(c){return c.phase==="main"?c.wordKeys:(c.retryKeys||[])}
 function slice(c){let a=phaseKeys(c),s=c.step*STEP;return a.slice(s,s+STEP)}
 function totalSteps(c){return Math.max(1,Math.ceil(phaseKeys(c).length/STEP))}
 function session(){
-  pauseActiveTimers();
+  pauseActiveTimers();setStudentInside(true);st.activeMode="evaluation";
   let c=st.current,ks=slice(c);
   if(!ks.length){if(c.type==="review"&&c.wordKeys.length===0)return finish();return endPhase()}
   let token=c.phase+":"+c.round+":"+c.step;
@@ -284,7 +346,7 @@ function clear(cv){let x=cv.getContext("2d");x.save();x.setTransform(1,0,0,1,0,0
 function updateNext(c,ks){let token=c.phase+":"+c.round+":"+c.step,ok=ks.every(k=>c.answers[k]?.status==="done"&&c.answers[k]?.token===token),b=document.getElementById("next");b.disabled=!ok;if(ok)document.getElementById("msg").textContent="이 STEP을 모두 끝냈습니다.";b.onclick=()=>{c.step++;save();c.step>=totalSteps(c)?endPhase():session()}}
 function endPhase(){let c=st.current;if(c.phase==="main"){if(c.everWrong.length){c.phase="retry";c.retryKeys=[...c.everWrong];c.step=0;c.round=1;c.roundWrong=[];c.answers={};save();return session()}return finish()}if(c.roundWrong.length){c.retryKeys=[...new Set(c.roundWrong)];c.roundWrong=[];c.step=0;c.round++;c.answers={};save();return session()}finish()}
 function finish(){
-  pauseActiveTimers();
+  pauseActiveTimers();setStudentInside(true);st.activeMode="evaluation";
   const c=st.current,wrong=[...new Set(c.everWrong)],today=localDate(),plan=st.reviewPlan||(st.reviewPlan={});
   for(const k of c.wordKeys){
     const previous=plan[k]||{stage:0};
@@ -303,7 +365,7 @@ function finish(){
   const desc=emptyReview?"오늘 다시 볼 오답이 없습니다.":"정답을 다시 떠올렸습니다. 틀렸던 단어는 다음 학습일에 다시 확인합니다.";
   app.innerHTML=`<section class="complete" aria-label="평가 완료">
     <div class="completeSymbol" aria-hidden="true">✓</div>
-    <h1>${c.type==="review"?"오늘 복습 완료!":"오늘 학습 완료!"}</h1>
+    <h1>${c.type==="review"?"오늘 복습 평가 완료!":"오늘 평가 완료!"}</h1>
     <p>${desc}</p><div class="score">${score}</div>
     <div class="scoreCaption">첫 평가 기준 · 다시 볼 단어 ${wrong.length}개</div>
     <p class="finishSchedule">틀린 단어는 다음 학습일, 맞힌 단어는 3일·7일 간격으로 확인합니다.</p>
@@ -328,6 +390,7 @@ function checkRestoreData(payload){
     if(!c.done&&c.wordKeys.some(k=>!byKey(k)))throw Error("진행 중인 DAY의 단어 데이터가 현재 앱에 없습니다.");
   }
   // Schema 1 remains backward-compatible; optional v0.2.0 fields must also be checked.
+  if(s.activeMode!==undefined&&s.activeMode!==null&&!["home","study","evaluation","studyDone"].includes(s.activeMode))throw Error("학습 또는 평가 화면 기록이 잘못되었습니다.");
   if(s.study!==null&&s.study!==undefined){
     const z=s.study;
     if(!object(z)||!Array.isArray(z.keys)||z.keys.length>2100||!z.keys.every(keyOK)||

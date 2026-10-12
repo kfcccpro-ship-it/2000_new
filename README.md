@@ -22,3 +22,5 @@ Word Master 수능 2000 기반 iPad Apple Pencil 영어→한글 필기평가 �
 - v0.2.1: 사용자 기존 WordMaster 원데이터에서 DAY49 40단어/첫 뜻 등록, 40개 상황문장/그림단서, 필기 타이머 절대 마감시각 저장 및 실제 브라우저 iPad 화면 회귀검사.
 
 - iPad viewport 실동작 검증: Actions의 `Real Chromium iPad viewport interaction regression`, 스크린샷 artifact `ipad-chromium-viewport-qa` 확인.
+
+- v0.2.2: 단순한 히어로에서 학습/평가를 독립 진입, 기록과 진도 각각 보존, 학습 완료 후 시험 자동 실행 없음.

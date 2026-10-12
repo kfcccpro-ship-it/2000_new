@@ -11,6 +11,13 @@ function browser(storage = new Map(), confirmAnswer = true) {
   let lastBlob = null;
   let downloadName = '';
   let alertCount = 0;
+  let fakeNow = Date.now();
+  const timeouts = new Map(), intervals = new Map();
+  let timerNo = 0;
+  class TestDate extends Date {
+    constructor(...args) {if(args.length)super(...args);else super(fakeNow)}
+    static now(){return fakeNow}
+  }
   const nodes = new Map();
   const cards = new Map();
   const classList = () => ({add() {}, remove() {}, toggle() {}});
@@ -89,7 +96,12 @@ function browser(storage = new Map(), confirmAnswer = true) {
     navigator: {userAgent: 'iPad', maxTouchPoints: 5},
     matchMedia: () => ({matches: true}),
     CSS: {escape: s => s}, innerWidth: 1024, innerHeight: 768,
-    devicePixelRatio: 1, setTimeout() {}, addEventListener() {},
+    devicePixelRatio: 1, Date: TestDate,
+    setTimeout(fn, delay=0) {const id=++timerNo;timeouts.set(id,{fn,delay});return id;},
+    clearTimeout(id) {timeouts.delete(id);},
+    setInterval(fn) {const id=++timerNo;intervals.set(id,fn);return id;},
+    clearInterval(id) {intervals.delete(id);},
+    addEventListener() {},
     alert() {alertCount++;}, confirm() {return confirmAnswer;}, console});
   vm.runInContext(dataCode, context, {filename: 'data/day50.js'});
   vm.runInContext(learningCode, context, {filename: 'data/learning-day50.js'});
@@ -109,6 +121,8 @@ function browser(storage = new Map(), confirmAnswer = true) {
   const correct = (n) => window.WORD_DATA.days[0].words[n - 1].answer;
   return {app, window, document, navTest, navAdmin, storage, state,
     card, get, submit, begin, next, resetDay, correct,
+    flushTimers() {const q=[...timeouts.values()].sort((a,b)=>a.delay-b.delay);timeouts.clear();for(const task of q)task.fn();},
+    advance(ms) {fakeNow+=ms;for(const [id,fn] of [...intervals])if(intervals.has(id))fn();},
     get backupBlob() {return lastBlob;}, get downloadName() {return downloadName;},
     get alerts() {return alertCount;}};
 }

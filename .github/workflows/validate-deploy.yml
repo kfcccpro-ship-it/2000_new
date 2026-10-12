@@ -9,7 +9,7 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -18,13 +18,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node tests/validate.mjs
-      - run: node --check app.js
-      - run: |
+      - name: Validate pilot
+        run: node tests/validate.mjs
+      - name: Syntax check
+        run: node --check app.js
+      - name: Build static site
+        run: |
           mkdir -p _site/data
           cp index.html styles.css app.js manifest.webmanifest VERSION _site/
           cp data/day50.js _site/data/
-      - uses: actions/upload-pages-artifact@v3
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
   deploy:

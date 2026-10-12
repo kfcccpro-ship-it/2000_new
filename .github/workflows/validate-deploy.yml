@@ -25,6 +25,8 @@ jobs:
         run: node --check app.js
       - name: iPad compatibility regression
         run: node tests/ipad-compat.mjs
+      - name: Kiosk home regression
+        run: node tests/kiosk-home.mjs
 
   deploy:
     needs: validate

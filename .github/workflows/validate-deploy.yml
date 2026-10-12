@@ -10,6 +10,7 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: false
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -37,7 +38,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Pages not enabled yet
         if: steps.pages.outcome != 'success'
-        run: |\n          echo "GitHub Pages is not enabled yet. One-time setup: Settings > Pages > Source = GitHub Actions."
+        run: |
+          echo "GitHub Pages is not enabled yet. One-time setup: Settings > Pages > Source = GitHub Actions."
       - name: Build static site
         if: steps.pages.outcome == 'success'
         run: |

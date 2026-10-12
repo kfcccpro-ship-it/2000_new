@@ -42,10 +42,12 @@ function writeAnswer(inputText){
  input.value=inputText;input.dispatchEvent(new win.Event("input",{bubbles:true}));
  card.querySelector("[data-sub]").click();
 }
-function skipStudy(){
- const btn=doc.getElementById("skipStudy");
- assert(!!btn,"study has skip confirmation");
- btn.click();
+function selectEvaluation(){
+ const home=doc.getElementById("navHome");
+ assert(!!home,"inner mode shows back-to-hero navigation");
+ home.click();
+ assert(!!doc.getElementById("startLearning")&&!!doc.getElementById("startEvaluation"),"both hero choices visible");
+ doc.getElementById("startEvaluation").click();
 }
 const timeoutFail=setTimeout(()=>{
  if(document.body.dataset.e2eStatus==="pending"){
@@ -57,7 +59,9 @@ try{
  // DAY49 is a real registered source, not a fabricated testing day.
  await mount(seedDay(49));
  assert(doc.querySelector(".kioskDay")?.textContent.includes("DAY 49"),"registered DAY49 is selectable");
- doc.getElementById("start").click();
+ assert(!!doc.getElementById("startLearning")&&!doc.getElementById("startLearning").disabled,"learning choice ready");
+ assert(!!doc.getElementById("startEvaluation")&&!doc.getElementById("startEvaluation").disabled,"assessment choice ready");
+ doc.getElementById("startLearning").click();
  assert(doc.querySelector(".learningWord")?.textContent==="endow","DAY49 first learning cue from real data");
  assert(doc.getElementById("learnMeaning").hidden,"meaning initially concealed");
  await sleep(4750);
@@ -65,7 +69,8 @@ try{
  assert(!doc.getElementById("sentenceLast").hidden,"Korean example progressively appears");
  assert(!doc.getElementById("nextStudy").disabled,"next learning action unlocks");
 
- skipStudy();
+ assert(state().current===null,"learning alone must not initialize grading");
+ selectEvaluation();
  assert(state().current?.wordKeys.length===40,"DAY49 precisely 40 graded words");
  assert(active().querySelector(".english")?.textContent==="endow","first timed question");
  assert(doc.getElementById("wordTimer")?.textContent==="15","15 second clock begins");
@@ -104,9 +109,9 @@ try{
  reviewSeed.stats={"49:1":{wrong:1,correct:0,lastWrong:"오답",attempts:[]}};
  await mount(reviewSeed);
  assert(doc.querySelector(".dueNotice"),"prior error notice visible");
- doc.getElementById("start").click();
+ doc.getElementById("startLearning").click();
  assert(doc.querySelector(".learningWord")?.textContent==="endow","due word appears first in study");
- skipStudy();
+ selectEvaluation();
  assert(state().current.wordKeys.length===41,"yesterday error plus new 40");
  assert(state().current.wordKeys[0]==="49:1","yesterday error first");
  assert(active().querySelector(".originBadge")?.textContent.includes("DAY 49"),"origin DAY label visible");

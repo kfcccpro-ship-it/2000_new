@@ -40,7 +40,7 @@ const store=new Map([["wm2000pilot_v1",JSON.stringify({
 })]]);
 const crossStore=new Map(store);
 const b=browser(store);
-assert.match(b.app.innerHTML,/지난 학습/);
+assert.match(b.app.innerHTML,/이전에 틀린 단어/);
 b.begin();
 assert.equal(b.state().current.type,"new");
 assert.ok(b.state().current.dueKeys.includes("50:1"));

@@ -31,6 +31,8 @@ jobs:
         run: node tests/runtime-flow.mjs
       - name: A design and layout regression
         run: node tests/a-design.mjs
+      - name: DAY schedule and progressive learning regression
+        run: node tests/learning-review.mjs
 
   deploy:
     needs: validate
@@ -53,7 +55,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html styles.css app.js manifest.webmanifest VERSION _site/
-          cp data/day50.js _site/data/
+          cp data/day50.js data/learning-day50.js _site/data/
       - name: Upload Pages artifact
         if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v4

@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const appCode = fs.readFileSync('app.js', 'utf8');
 const dataCode = fs.readFileSync('data/day50.js', 'utf8');
+const learningCode = fs.readFileSync('data/learning-day50.js', 'utf8');
 
 function browser(storage = new Map(), confirmAnswer = true) {
   let html = '';
@@ -91,6 +92,7 @@ function browser(storage = new Map(), confirmAnswer = true) {
     devicePixelRatio: 1, setTimeout() {}, addEventListener() {},
     alert() {alertCount++;}, confirm() {return confirmAnswer;}, console});
   vm.runInContext(dataCode, context, {filename: 'data/day50.js'});
+  vm.runInContext(learningCode, context, {filename: 'data/learning-day50.js'});
   vm.runInContext(appCode, context, {filename: 'app.js'});
   const state = () => JSON.parse(localStorage.getItem('wm2000pilot_v1'));
   const card = k => {const c = cards.get(k); assert.ok(c, "card missing: " + k); return c;};
@@ -101,9 +103,9 @@ function browser(storage = new Map(), confirmAnswer = true) {
     c.querySelector('[data-in]').oninput?.();
     c.querySelector('[data-sub]').onclick();
   };
-  const begin = () => get('start').onclick();
+  const begin = () => {get('start').onclick();get('skipStudy').onclick();};
   const next = () => {assert.equal(get('next').disabled, false, 'STEP is blocked'); get('next').onclick();};
-  const resetDay = () => {get('daySel').value = '50'; get('saveDay').onclick();};
+  const resetDay = () => {navAdmin.onclick();get('manualDay').value = '50';get('applyManualDay').onclick();navTest.onclick();};
   const correct = (n) => window.WORD_DATA.days[0].words[n - 1].answer;
   return {app, window, document, navTest, navAdmin, storage, state,
     card, get, submit, begin, next, resetDay, correct,
@@ -218,3 +220,4 @@ assert.equal(JSON.stringify(other.state()), before, 'invalid restore must preser
 assert.match(other.get('backupMsg').textContent, /실패/);
 
 console.log('PASS runtime: strict grading, Pencil tracing, 8x5 steps, retry, 3+1 review, reload, backup/restore');
+export {browser, completeNew};

@@ -5,7 +5,7 @@ const start=app.indexOf("function home(){");
 const end=app.indexOf("\nfunction start(){",start);
 if(start<0||end<0) throw new Error("home function missing");
 const home=app.slice(start,end);
-for(const s of ["kioskHome","kioskDay","kioskStart","kioskHint","kioskAdjust","신규 3일 · 4일차 복습"]) if(!home.includes(s)) throw new Error("kiosk home missing: "+s);
+for(const s of ["kioskHome","kioskDay","kioskStart","kioskHint","kioskAdjust","신규 3일 · 4일차 복습","startLearning"]) if(!home.includes(s)) throw new Error("kiosk home missing: "+s);
 for(const s of ["grid2","백강 고시체 가이드","deviceNote","4일 리듬","진도</h2>"]) if(home.includes(s)) throw new Error("home still cluttered: "+s);
 for(const s of [".kioskHome",".kioskDay",".kioskStart",".kioskAdjust"]) if(!css.includes(s)) throw new Error("kiosk css missing: "+s);
 console.log("PASS kiosk-style minimal main page");

@@ -37,6 +37,7 @@ const store=new Map([["wm2000pilot_v1",JSON.stringify({
  everWrong:["50:1"],wrongCount:1}],stats:{"50:1":{wrong:1,correct:0,lastWrong:"가짜",attempts:[]}},
  current:null,reviewPlan:{},study:null
 })]]);
+const crossStore=new Map(store);
 const b=browser(store);
 assert.match(b.app.innerHTML,/지난 학습/);
 b.begin();
@@ -44,6 +45,20 @@ assert.equal(b.state().current.type,"new");
 assert.ok(b.state().current.dueKeys.includes("50:1"));
 assert.match(b.app.innerHTML,/어제 오답 · DAY 50/);
 assert.match(b.app.innerHTML,/오답 1회 · 집중/);
+// Simulate an already-entered DAY 49 dictionary in a test-only sandbox: ensure DAY 50's
+// previous-day error appears before the 40 newer words, and retains its original DAY label.
+const cross=browser(crossStore);
+cross.window.WORD_DATA.days.push({day:49,words:Array.from({length:40},(_,i)=>({day:49,no:i+1,english:"testword"+(i+1),answer:"뜻"+(i+1)}))});
+cross.navAdmin.onclick();
+cross.get("manualDay").value="49";
+cross.get("applyManualDay").onclick();
+assert.equal(cross.state().nextDay,49);
+cross.navTest.onclick();
+cross.begin();
+assert.equal(cross.state().current.bookDay,49);
+assert.equal(cross.state().current.wordKeys.length,41,"due words must be added, not replace the new 40");
+assert.equal(cross.state().current.wordKeys[0],"50:1","previous DAY should be first");
+assert.match(cross.app.innerHTML,/어제 오답 · DAY 50/);
 const c=browser();
 c.get("start").onclick();
 assert.match(c.app.innerHTML,/교재 첫 번째 뜻/);

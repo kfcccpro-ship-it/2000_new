@@ -326,7 +326,7 @@ function checkRestoreData(payload){
   // Schema 1 remains backward-compatible; optional v0.2.0 fields must also be checked.
   if(s.study!==null&&s.study!==undefined){
     const z=s.study;
-    if(!object(z)||!Array.isArray(z.keys)||z.keys.length>200||!z.keys.every(keyOK)||
+    if(!object(z)||!Array.isArray(z.keys)||z.keys.length>2100||!z.keys.every(keyOK)||
        !Number.isInteger(z.index)||z.index<0||z.index>z.keys.length||
        !Number.isInteger(z.day)||z.day<1||z.day>50)throw Error("학습 이어하기 기록이 올바르지 않습니다.");
   }

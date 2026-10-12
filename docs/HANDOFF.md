@@ -29,9 +29,14 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 글자 크기는 일정하게
 - 오답 시 희미한 정답 따라쓰기
 
-## v0.1.0 파일럿
+## v0.1.1 파일럿
 - 기능 검증을 위해 DAY 50의 40단어만 우선 탑재.
-- 필기인식 UX가 iPad에서 통과하면 DAY 49~1 데이터 연결 및 전체 50 DAY 자동 진행을 확장.
+- iPad Pro 10.5 + 2026 iPad Air 13(M4) 동시 호환을 목표로 반응형 UI를 강화.
+- iPad Air 13 가로모드에서는 8단어를 4×2, 10.5형/중간폭에서는 2열 중심으로 표시.
+- safe-area, 화면 회전, 가상 키보드(visualViewport), 입력칸 자동 스크롤을 보강.
+- 오답 따라쓰기 Canvas는 Apple Pencil 압력 + coalesced pointer events + ResizeObserver에 대응.
+- Scribble 입력칸은 한국어 lang/inputmode/enterkeyhint를 명시하고 높이를 72px 이상으로 확대.
+- 실제 iPad에서 필기인식 UX가 통과하면 DAY 49~1 데이터 연결 및 전체 50 DAY 자동 진행을 확장.
 - GitHub main push 시 Validate → GitHub Pages 자동 배포.
 
 ## 현재 배포 상태
@@ -39,3 +44,11 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - Pages 배포 코드는 준비 완료.
 - 저장소에서 GitHub Pages를 한 번만 활성화해야 실제 URL 배포가 시작됨: Settings → Pages → Build and deployment → Source = GitHub Actions.
 - 활성화 후 다음 main push 또는 workflow 재실행부터 자동 배포.
+
+
+## 2026 iPad Air 13 호환 기준
+- 2026 iPad Air 13(M4)의 13형 화면을 큰 iPad 프로필로 보고 가로모드 4열×2행 STEP 레이아웃을 적용한다.
+- Apple Pencil Pro / Apple Pencil(USB-C) 입력을 고려해 pointer events, 압력값, hover 표시를 지원한다.
+- 기기명을 하드코딩하지 않고 실제 CSS viewport 폭과 방향에 따라 자동 레이아웃을 선택한다.
+- 가상 키보드가 올라오면 sticky 하단바를 해제하고 현재 입력 카드가 화면 중앙에 오도록 한다.
+- iPad Pro 10.5는 기존 2열 레이아웃을 유지해 작은 화면에서 입력칸이 좁아지지 않도록 한다.

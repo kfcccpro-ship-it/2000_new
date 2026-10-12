@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const html=fs.readFileSync("index.html","utf8");
 const app=fs.readFileSync("app.js","utf8");
 const css=fs.readFileSync("styles.css","utf8");
-assert.match(html,/v0\.2\.0<\/title>/);
+assert.match(html,/v0\.2\.1<\/title>/);
 assert.match(html,/id="navAdmin"/);
 assert.equal(fs.readFileSync("VERSION","utf8").trim(),"0.2.1");
 for(const s of ["const VER=\"0.2.1\",KEY=\"wm2000pilot_v1\",STEP=8","function home(){","function session(){","function focusCard(","function relearn(","function checkRestoreData(","function backupRecords()","function restoreRecords(","function admin(){","NFC","localStorage","c.drafts||(c.drafts={})","if(c.drafts)delete c.drafts[k]"]) {

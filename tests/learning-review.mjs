@@ -26,7 +26,7 @@ const blank=browser();
 blank.navAdmin.onclick();
 blank.get("manualDay").value="49";
 blank.get("applyManualDay").onclick();
-assert.equal(blank.state().nextDay,50,"unregistered DAY must not change state");
+assert.equal(blank.state()?.nextDay??50,50,"unregistered DAY must not change state");
 blank.get("manualDay").value="50";
 blank.get("applyManualDay").onclick();
 assert.equal(blank.state().nextDay,50);

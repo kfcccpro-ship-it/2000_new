@@ -29,6 +29,8 @@ jobs:
         run: node tests/kiosk-home.mjs
       - name: Runtime learning and backup regression
         run: node tests/runtime-flow.mjs
+      - name: A design and layout regression
+        run: node tests/a-design.mjs
 
   deploy:
     needs: validate

@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const VER="0.1.3",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
+const VER="0.1.4",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
 const DATA=window.WORD_DATA;let route="test";let st=load();
 function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null}}
 function load(){try{return Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){return base()}}
@@ -27,49 +27,120 @@ function setupDeviceCompat(){
   document.addEventListener("focusin",e=>{if(!e.target.matches?.(".scribble"))return;setTimeout(()=>e.target.closest(".card")?.scrollIntoView({block:"center",behavior:"smooth"}),140)});
 }
 setupDeviceCompat();
-function setRoute(r){route=r;navTest.classList.toggle("active",r==="test");navAdmin.classList.toggle("active",r==="admin");render()}
+function setRoute(r){route=r;navTest.classList.toggle("active",r==="test");navAdmin.classList.toggle("active",r==="admin");document.body.classList.toggle("isAdminRoute",r==="admin");render()}
 navTest.onclick=()=>setRoute("test");navAdmin.onclick=()=>setRoute("admin");
 function render(){route==="admin"?admin():test()}
 function test(){if(st.current&&!st.current.done)return session();home()}
 function home(){
-  let rv=isReview(),pool=reviewPool(),d=day(st.nextDay),canStart=rv||!!d;
+  const rv=isReview(),pool=reviewPool(),d=day(st.nextDay),canStart=rv||!!d;
   app.innerHTML=`<section class="kioskHome">
-    <div class="kioskEyebrow">${rv?"REVIEW DAY":"TODAY"}</div>
+    <div class="kioskEyebrow">${rv?"오늘의 복습":"오늘의 필기평가"}</div>
     <div class="kioskDay">${rv?"오답 점검":"DAY "+st.nextDay}</div>
-    <div class="kioskMeta">${rv?(pool.length?pool.length+"단어":"복습할 오답이 없습니다"):"40단어 · 8단어 × 5 STEP"}</div>
-    <button class="primary kioskStart" id="start" ${canStart?"":"disabled"}>${rv?"오답 점검 시작":"테스트 시작"}</button>
-    <div class="kioskHint">Apple Pencil로 한글 뜻 쓰기 → 인식 확인 → 제출</div>
+    <div class="kioskRule" aria-hidden="true"></div>
+    <div class="kioskMeta">${rv?(pool.length?pool.length+"단어":"복습할 오답이 없습니다"):'40단어 <span class="metaDot" aria-hidden="true">·</span> 5 STEP'}</div>
+    <button type="button" class="primary kioskStart" id="start" ${canStart?"":"disabled"}>${rv?"오답 점검 시작":"평가 시작"} <span aria-hidden="true">→</span></button>
+    <div class="kioskHint">Apple Pencil로 한글 뜻을 쓰고<br>인식된 글자를 확인한 뒤 제출해요.</div>
+    ${!rv&&!d?'<p class="kioskWarn" role="status">선택한 DAY의 단어가 아직 등록되지 않았습니다. DAY 50을 선택해 주세요.</p>':""}
     <details class="kioskAdjust">
       <summary>DAY 변경</summary>
       <div class="kioskAdjustBody">
-        <select id="daySel">${Array.from({length:50},(_,i)=>50-i).map(n=>`<option value="${n}" ${n===st.nextDay?"selected":""}>DAY ${n}</option>`).join("")}</select>
-        <button class="secondary" id="saveDay">적용</button>
+        <select id="daySel" aria-label="신규 학습 DAY">${Array.from({length:50},(_,i)=>50-i).map(n=>`<option value="${n}" ${n===st.nextDay?"selected":""}>DAY ${n}</option>`).join("")}</select>
+        <button type="button" class="secondary" id="saveDay">적용</button>
       </div>
-      ${!rv&&!d?'<p class="kioskWarn">현재 파일럿은 DAY 50만 사용할 수 있습니다.</p>':""}
+      <p class="kioskCycle">신규 3일 · 4일차 복습</p>
     </details>
-    <div class="kioskCycle">신규 3일 · 4일차 복습</div>
   </section>`;
   document.getElementById("saveDay").onclick=()=>{st.nextDay=+document.getElementById("daySel").value;save();home()};
   document.getElementById("start").onclick=()=>start();
 }
+
 function start(){if(isReview()){st.current={id:Date.now(),type:"review",wordKeys:reviewPool(),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}else{let d=day(st.nextDay);if(!d)return alert("DAY "+st.nextDay+" 단어가 아직 등록되지 않았습니다. 교재 데이터 등록 후 이용해 주세요.");st.current={id:Date.now(),type:"new",bookDay:d.day,wordKeys:d.words.map(key),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}save();session()}
 function phaseKeys(c){return c.phase==="main"?c.wordKeys:(c.retryKeys||[])}
 function slice(c){let a=phaseKeys(c),s=c.step*STEP;return a.slice(s,s+STEP)}
 function totalSteps(c){return Math.max(1,Math.ceil(phaseKeys(c).length/STEP))}
-function session(){let c=st.current,ks=slice(c);if(!ks.length){if(c.type==="review"&&c.wordKeys.length===0)return finish();return endPhase()}
-let token=c.phase+":"+c.round+":"+c.step,title=c.phase==="main"?(c.type==="review"?"오답 점검":"1차 평가"):"오답 재시험 "+c.round+"회차",done=ks.filter(k=>c.answers[k]?.status==="done"&&c.answers[k]?.token===token).length;
-app.innerHTML=`<div class="stepHead"><span class="chip">${c.type==="review"?"복습":"DAY "+c.bookDay}</span><div><div class="stepTitle">${title} · STEP ${c.step+1}/${totalSteps(c)}</div><div class="small">8단어씩 · 단어별 즉시 제출</div></div><strong>${done}/${ks.length}</strong></div>
-<div class="notice"><b>Apple Pencil로 입력칸에 직접 쓰세요.</b><br>iPad가 손글씨를 텍스트로 바꾸면 인식 결과를 확인한 뒤 제출합니다. 잘못 인식되면 지우고 바로 다시 쓰세요.</div>
-<div class="progress"><i style="width:${Math.round(c.step/totalSteps(c)*100)}%"></i></div><section class="wordGrid">${ks.map((k,i)=>card(k,i,c)).join("")}</section>
-<div class="footer"><p id="msg">오답은 정답 확인 → 따라쓰기 → 다시쓰기까지 끝내야 다음 STEP으로 갑니다.</p><button class="primary" id="next" disabled>${c.step+1<totalSteps(c)?"다음 8단어":"이 단계 마무리"}</button></div>`;
-ks.forEach(k=>bind(k,c));updateNext(c,ks)}
-function card(k,i,c){let w=byKey(k),a=c.answers[k]||{},token=c.phase+":"+c.round+":"+c.step,done=a.status==="done"&&a.token===token,bad=a.result==="wrong"&&a.token===token;
-return `<article class="card ${done?(bad?"bad":"ok"):""}" data-k="${k}"><div><span class="small">${i+1}. ${w.day}-${w.no}</span><div class="english">${esc(w.english)}</div></div><label class="small"><b>백강 고시체를 떠올리며 한글로 쓰세요</b></label><input class="scribble" data-in lang="ko" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Apple Pencil로 여기에 쓰세요" ${done?"disabled":""} value="${done?esc(a.input||""):""}"><div class="recognized" data-rec>인식: <b>${done?esc(a.input||""):"-"}</b></div><div class="actions"><button class="secondary" data-clear ${done?"disabled":""}>지우기</button><button class="primary" data-sub ${done?"disabled":""}>제출</button></div><div data-fb>${bad?relearn(w,a):""}</div></article>`}
-function relearn(w,a){if(a.relearnDone)return `<div class="answer"><span>정답</span><b>${esc(w.answer)}</b></div><p class="small">재학습 완료 · 당일 오답 재시험에 다시 나옵니다.</p>`;
-return `<div class="answer"><span>정답</span><b>${esc(w.answer)}</b></div><div style="margin-top:8px"><b>바로 재학습</b><p class="small">① 희미한 정답을 한 번 따라 쓰고 ② 오른쪽에 다시 직접 써서 정확히 인식시키세요.</p><div class="traceWrap"><div><div class="traceBox"><div class="traceText">${esc(w.answer)}</div><canvas class="trace" data-trace></canvas></div><div class="actions"><button class="secondary" data-tclear>지우기</button><button class="secondary" data-tdone>따라쓰기 완료</button></div></div><div><input class="scribble" data-re lang="ko" inputmode="text" enterkeyhint="done" placeholder="정답을 다시 손으로 쓰세요" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="recognized" data-rerec>재인식: <b>-</b></div><div class="actions"><button class="secondary" data-rclear>지우기</button><button class="good" data-rsub disabled>재확인</button></div></div></div></div>`}
-function bind(k,c){let el=document.querySelector('[data-k="'+CSS.escape(k)+'"]'),inp=el.querySelector("[data-in]"),rec=el.querySelector("[data-rec] b");if(inp){inp.oninput=()=>rec.textContent=inp.value||"-";el.querySelector("[data-clear]").onclick=()=>{inp.value="";rec.textContent="-";inp.focus()};el.querySelector("[data-sub]").onclick=()=>submit(k,inp.value,c)}if(el.querySelector("[data-trace]"))bindRelearn(k,c,el)}
+function session(){
+  let c=st.current,ks=slice(c);
+  if(!ks.length){if(c.type==="review"&&c.wordKeys.length===0)return finish();return endPhase()}
+  let token=c.phase+":"+c.round+":"+c.step;
+  let title=c.phase==="main"?(c.type==="review"?"오답 점검":"1차 필기평가"):"오답 재시험 "+c.round+"회차";
+  let done=ks.filter(k=>c.answers[k]?.status==="done"&&c.answers[k]?.token===token).length;
+  let focus=ks.find(k=>c.answers[k]?.status==="relearn"&&c.answers[k]?.token===token);
+  let segments=ks.map(k=>`<i class="${c.answers[k]?.status==="done"&&c.answers[k]?.token===token?"filled":""}"></i>`).join("");
+  app.innerHTML=`<div class="stepHead">
+    <span class="chip">${c.type==="review"?"복습":"DAY "+c.bookDay}</span>
+    <div><div class="stepTitle">${focus?"오답 재학습":title}</div><div class="stepSub">STEP ${c.step+1} / ${totalSteps(c)}</div></div>
+    <strong class="stepCount">${done} <span>/ ${ks.length}</span></strong>
+  </div>
+  <div class="progressSegments" role="progressbar" aria-label="현재 STEP에서 완료한 단어" aria-valuemin="0" aria-valuemax="${ks.length}" aria-valuenow="${done}">${segments}</div>
+  ${focus?`<section class="focusReview">${focusCard(focus,c)}</section>`:`<p class="stepTip">Apple Pencil로 뜻을 쓰고, 인식된 한글을 확인한 뒤 제출하세요.</p>
+    <section class="wordGrid">${ks.map((k,i)=>card(k,i,c)).join("")}</section>`}
+  <div class="footer"><p id="msg">${focus?"정답을 따라 쓰고 다시 입력하면 평가 화면으로 돌아갑니다.":"각 단어를 제출하고, 오답 재학습까지 마치면 다음 STEP으로 이동합니다."}</p>
+    <button type="button" class="primary" id="next" disabled>${c.step+1<totalSteps(c)?"다음 8단어":"이 단계 마무리"} <span aria-hidden="true">→</span></button>
+  </div>`;
+  if(focus)bind(focus,c);else ks.forEach(k=>bind(k,c));
+  updateNext(c,ks);
+}
+function focusCard(k,c){
+  const w=byKey(k),a=c.answers[k];
+  return `<article class="focusCard" data-k="${k}">
+    <div class="focusIntro">다시 익혀볼 단어</div><h2 class="focusEnglish">${esc(w.english)}</h2>
+    ${relearn(w,a)}
+  </article>`;
+}
+
+function card(k,i,c){
+  const w=byKey(k),a=c.answers[k]||{},token=c.phase+":"+c.round+":"+c.step;
+  const done=a.status==="done"&&a.token===token;
+  const bad=a.result==="wrong"&&a.token===token;
+  const inRelearn=bad&&!a.relearnDone;
+  const inputValue=done||inRelearn?a.input||"":c.drafts?.[k]||"";
+  const state=done?(bad?"재학습 완료":"완료"):(inRelearn?"오답 확인 중":"미완료");
+  return `<article class="card ${done?(bad?"bad":"ok"):""}" data-k="${k}">
+    <div class="cardNum">${w.day}-${w.no} · ${state}</div>
+    <div class="english">${esc(w.english)}</div>
+    <label class="srOnly" for="answer-${w.day}-${w.no}">단어 ${esc(w.english)}의 한글 뜻을 백강 고시체로 쓰세요</label>
+    <input id="answer-${w.day}-${w.no}" class="scribble" data-in lang="ko" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      placeholder="여기에 한글로 쓰기" ${done||inRelearn?"disabled":""} value="${esc(inputValue)}">
+    <div class="recognized" data-rec>인식: <b>${esc(inputValue)||"-"}</b></div>
+    <div class="actions"><button class="secondary" type="button" data-clear ${done||inRelearn?"disabled":""}>지우기</button><button type="button" class="primary" data-sub ${done||inRelearn?"disabled":""}>제출</button></div>
+    <div data-fb>${bad?relearn(w,a):""}</div>
+  </article>`;
+}
+
+function relearn(w,a){
+  if(a.relearnDone)return `<div class="answer answerMini"><span>정답</span><b>${esc(w.answer)}</b><p>재학습 완료 · 당일 오답 재시험에 다시 나옵니다.</p></div>`;
+  return `<div class="relearnPanel">
+    <div class="answer"><span>정답 확인</span><b>${esc(w.answer)}</b><p>연한 글자를 따라 쓰고, 오른쪽에 한글 뜻을 직접 다시 쓰세요.</p></div>
+    <div class="traceWrap">
+      <div class="relearnCell">
+        <div class="relearnCellTitle">① 따라쓰기</div>
+        <div class="traceBox"><div class="traceText">${esc(w.answer)}</div><canvas class="trace" data-trace aria-label="정답 따라쓰기"></canvas></div>
+        <div class="actions"><button type="button" class="secondary" data-tclear>지우기</button><button type="button" class="secondary" data-tdone>따라쓰기 완료</button></div>
+      </div>
+      <div class="relearnCell">
+        <div class="relearnCellTitle">② 직접 다시쓰기</div>
+        <label class="srOnly" for="retry-${w.day}-${w.no}">정답을 다시 쓰세요</label>
+        <input id="retry-${w.day}-${w.no}" class="scribble" data-re lang="ko" inputmode="text" enterkeyhint="done" placeholder="정답을 다시 쓰세요" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <div class="recognized" data-rerec>재인식: <b>-</b></div>
+        <div class="actions"><button type="button" class="secondary" data-rclear>지우기</button><button type="button" class="good" data-rsub disabled>재확인</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bind(k,c){
+  let el=document.querySelector('[data-k="'+CSS.escape(k)+'"]'),inp=el.querySelector("[data-in]"),rec=el.querySelector("[data-rec] b");
+  if(inp){
+    const drafts=c.drafts||(c.drafts={});
+    inp.oninput=()=>{rec.textContent=inp.value||"-";drafts[k]=inp.value;save()};
+    el.querySelector("[data-clear]").onclick=()=>{inp.value="";rec.textContent="-";delete drafts[k];save();inp.focus()};
+    el.querySelector("[data-sub]").onclick=()=>submit(k,inp.value,c);
+  }
+  if(el.querySelector("[data-trace]"))bindRelearn(k,c,el);
+}
+
 function attempt(w,input,result,ctx){let s=st.stats[key(w)]||(st.stats[key(w)]={wrong:0,correct:0,lastWrong:"",attempts:[]});s.attempts.push({at:Date.now(),input,result,ctx});if(result==="wrong"){s.wrong++;s.lastWrong=input}else s.correct++}
-function submit(k,input,c){let w=byKey(k),v=norm(input);if(!v)return;let ok=v===norm(w.answer),token=c.phase+":"+c.round+":"+c.step;c.answers[k]={input:v,result:ok?"correct":"wrong",status:ok?"done":"relearn",relearnDone:ok,token};attempt(w,v,ok?"correct":"wrong",c.phase);if(!ok){if(!c.everWrong.includes(k))c.everWrong.push(k);if(!c.roundWrong.includes(k))c.roundWrong.push(k)}save();session()}
+function submit(k,input,c){let w=byKey(k),v=norm(input);if(!v)return;if(c.drafts)delete c.drafts[k];let ok=v===norm(w.answer),token=c.phase+":"+c.round+":"+c.step;c.answers[k]={input:v,result:ok?"correct":"wrong",status:ok?"done":"relearn",relearnDone:ok,token};attempt(w,v,ok?"correct":"wrong",c.phase);if(!ok){if(!c.everWrong.includes(k))c.everWrong.push(k);if(!c.roundWrong.includes(k))c.roundWrong.push(k)}save();session()}
 function bindRelearn(k,c,el){let w=byKey(k),a=c.answers[k],cv=el.querySelector("[data-trace]"),ink=false;canvas(cv,()=>ink=true);el.querySelector("[data-tclear]").onclick=()=>{clear(cv);ink=false};let td=el.querySelector("[data-tdone]"),re=el.querySelector("[data-re]"),rr=el.querySelector("[data-rerec] b"),rs=el.querySelector("[data-rsub]");td.onclick=()=>{if(!ink)return alert("희미한 정답 위에 한 번 따라 써 주세요.");a.traceDone=true;save();rs.disabled=!norm(re.value);re.focus()};re.oninput=()=>{rr.textContent=re.value||"-";rs.disabled=!(a.traceDone&&norm(re.value))};el.querySelector("[data-rclear]").onclick=()=>{re.value="";rr.textContent="-";rs.disabled=true;re.focus()};rs.onclick=()=>{let v=norm(re.value);if(v!==norm(w.answer)){attempt(w,v,"wrong","relearn");re.value="";rr.textContent="다시 써 주세요";save();return}attempt(w,v,"correct","relearn");a.relearnDone=true;a.status="done";a.input=v;save();session()}}
 function canvas(cv,onInk){
   let d=Math.min(2,devicePixelRatio||1),x=null,draw=false,last=null;
@@ -93,7 +164,26 @@ function canvas(cv,onInk){
 function clear(cv){let x=cv.getContext("2d");x.save();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);x.restore()}
 function updateNext(c,ks){let token=c.phase+":"+c.round+":"+c.step,ok=ks.every(k=>c.answers[k]?.status==="done"&&c.answers[k]?.token===token),b=document.getElementById("next");b.disabled=!ok;if(ok)document.getElementById("msg").textContent="이 STEP을 모두 끝냈습니다.";b.onclick=()=>{c.step++;save();c.step>=totalSteps(c)?endPhase():session()}}
 function endPhase(){let c=st.current;if(c.phase==="main"){if(c.everWrong.length){c.phase="retry";c.retryKeys=[...c.everWrong];c.step=0;c.round=1;c.roundWrong=[];c.answers={};save();return session()}return finish()}if(c.roundWrong.length){c.retryKeys=[...new Set(c.roundWrong)];c.roundWrong=[];c.step=0;c.round++;c.answers={};save();return session()}finish()}
-function finish(){let c=st.current,wrong=[...new Set(c.everWrong)],h={id:c.id,date:new Date().toISOString().slice(0,10),type:c.type,bookDay:c.bookDay||null,total:c.wordKeys.length,everWrong:wrong,wrongCount:wrong.length,retryRounds:c.round};st.history.push(h);if(c.type==="new")st.nextDay=Math.max(1,c.bookDay-1);st.sessionNo++;c.done=true;save();app.innerHTML=`<section class="panel complete"><h1>${c.type==="review"?"오답 점검 완료":"오늘 평가 완료"}</h1><div class="score">${c.type==="review"&&!c.wordKeys.length?"오답 없음":(c.wordKeys.length-wrong.length)+"/"+c.wordKeys.length}</div><p>${c.type==="review"&&!c.wordKeys.length?"지난 3회 신규 학습에서 틀린 단어가 없습니다.":"첫 평가 기준입니다. 오답은 모두 재학습과 재시험을 통과했습니다."}</p><button class="primary" id="home">오늘 화면으로</button></section>`;document.getElementById("home").onclick=()=>{st.current=null;save();home()}}
+function finish(){
+  let c=st.current,wrong=[...new Set(c.everWrong)];
+  let h={id:c.id,date:new Date().toISOString().slice(0,10),type:c.type,bookDay:c.bookDay||null,total:c.wordKeys.length,everWrong:wrong,wrongCount:wrong.length,retryRounds:c.round};
+  st.history.push(h);
+  if(c.type==="new")st.nextDay=Math.max(1,c.bookDay-1);
+  st.sessionNo++;c.done=true;save();
+  let emptyReview=c.type==="review"&&!c.wordKeys.length;
+  let score=emptyReview?"오답 없음":(c.wordKeys.length-wrong.length)+"/"+c.wordKeys.length;
+  let desc=emptyReview?"지난 3회 신규 학습에서 틀린 단어가 없습니다.":"오답까지 재학습과 재시험을 마쳤습니다.";
+  app.innerHTML=`<section class="complete" aria-label="평가 완료">
+    <div class="completeSymbol" aria-hidden="true">✓</div>
+    <h1>${c.type==="review"?"오답 점검 완료!":"오늘 평가 완료!"}</h1>
+    <p>${desc}</p>
+    <div class="score">${score}</div>
+    <div class="scoreCaption">첫 평가 기준 · 오답 ${wrong.length}개</div>
+    <button type="button" class="primary completeButton" id="home">오늘 화면으로 <span aria-hidden="true">→</span></button>
+  </section>`;
+  document.getElementById("home").onclick=()=>{st.current=null;save();home()};
+}
+
 function checkRestoreData(payload){
   if(!payload||payload.format!=="wm2000-local-backup"||payload.schema!==1)throw Error("이 웹앱의 백업 파일이 아닙니다.");
   const s=payload.state,object=v=>v&&typeof v==="object"&&!Array.isArray(v);

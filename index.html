@@ -2,20 +2,20 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#20304f">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f0eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>2000 영단어 필기평가 v0.1.3</title>
+  <title>2000 영단어 필기평가 v0.1.4</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=0.1.3">
+  <link rel="stylesheet" href="styles.css?v=0.1.4">
 </head>
 <body>
 <header class="topbar">
-  <div><strong>2000 영단어 필기평가</strong><small>영어 → 한글 · Apple Pencil</small></div>
-  <nav><button id="navTest" class="nav active">테스트</button><button id="navAdmin" class="nav">관리자</button></nav>
+  <div class="appBrand"><span class="brandTag" aria-hidden="true">2000</span><strong>영단어</strong></div>
+  <nav aria-label="화면 전환"><button id="navTest" class="nav active" type="button">학습 화면</button><button id="navAdmin" class="nav" type="button" aria-label="보호자 설정">보호자 설정 <span aria-hidden="true">⚙</span></button></nav>
 </header>
 <main id="app"></main>
-<script src="data/day50.js?v=0.1.3"></script>
-<script src="app.js?v=0.1.3"></script>
+<script src="data/day50.js?v=0.1.4"></script>
+<script src="app.js?v=0.1.4"></script>
 </body>
 </html>

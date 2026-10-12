@@ -183,6 +183,18 @@ assert.equal(resumed.state().current.answers['50:1'].status, 'done');
 resumed.submit(2, resumed.correct(2));
 assert.equal(resumed.state().current.answers['50:2'].status, 'done');
 
+// Writing in a different card must survive another answer's rerender and reload.
+const draftsBefore = resumed.card('50:3').querySelector('[data-in]');
+draftsBefore.value = '미제출 필기';
+draftsBefore.oninput();
+assert.equal(resumed.state().current.drafts['50:3'], '미제출 필기');
+resumed.submit(4, resumed.correct(4));
+assert.equal(resumed.state().current.drafts['50:3'], '미제출 필기');
+const draftReload = browser(stored);
+assert.equal(draftReload.state().current.drafts['50:3'], '미제출 필기');
+draftReload.submit(3, draftReload.correct(3));
+assert.equal(Object.hasOwn(draftReload.state().current.drafts,'50:3'), false);
+
 resumed.navAdmin.onclick();
 resumed.get('exportBackup').onclick();
 assert.match(resumed.downloadName, /wm2000-backup-.*\.json/);

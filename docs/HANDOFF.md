@@ -83,3 +83,15 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 주의: VM 포인터 이벤트 검사는 실제 iPadOS에서의 Apple Pencil/Scribble 인식률이나 Safari 다운로드 성공을 증명하지 않는다. 실제 두 iPad 기종에서의 수동 검증 필요.
 - 아직 DAY 49~1 교재 원문 데이터가 없다. 사용자 교재의 첫 번째 의미를 확인한 다음에만 신규 DAY 데이터를 작성한다. 추정 단어로 2000개를 채우지 않는다.
 - 다음 우선순위: (1) 실제 iPad Pro 10.5 및 iPad Air 13에서 한국어 Scribble/백업 확인, (2) DAY 49~1 정확한 원본 데이터 확보·40개/일 검증, (3) 확장 DAY 배포 및 자동 진도 회귀검사.
+
+
+## v0.1.4 — 승인된 Mobbin A안 실제 적용 (2026-10-12)
+- 기준 원본: main `6eeba41fb984e2ade6d9bdbc18b4bbbbd0c1a721`, VERSION `0.1.3`.
+- 승인 레퍼런스: Figma `g9MeTNXefGtu81Rk5vwsnI`, node `4:2`; 실제 비교 시안 `2000_new_UI_A_review.html`.
+- 디자인: 크림색 배경(#f6f0eb), 청록색 시작/진행 버튼(#9cc6c8), 넓은 여백, DAY 중심 키오스크, 8단어 진행 세그먼트, 카드별 Pencil 입력, 오답 1개 집중 재학습, 간결한 완료 화면.
+- 운영 기능/기록 유지: `wm2000pilot_v1` localStorage 키 그대로, STEP=8, DAY50 데이터, 3회 신규+4회차 복습, NFC+trim 엄격 채점, 오답→캔버스 따라쓰기→재입력→재시험, 부모 관리자/JSON 백업·복원.
+- 데이터 안정성: `st.current.drafts`에 제출 전 필기 텍스트를 저장해 다른 단어 제출로 리렌더되어도 사라지지 않게 보강. 제출 뒤 해당 draft 삭제. 다른 기록을 초기화하거나 재설정하지 않음.
+- iPad 레이아웃: Air 13 가로 4열×2행, Pro 10.5 가로 2열, 세로 2열, 작은 폰 1열. Apple Pencil Scribble 필드는 유지, 확대 및 키보드 viewport 처리 유지.
+- 배포 시 Validate/Node 런타임 회귀검사/`tests/a-design.mjs` 확인 및 GitHub Pages Deploy SUCCESS 확인 필요.
+- 실제 iPadOS Scribble 정확도와 iPad Safari에서 키보드 전환, 백업 다운로드는 실기기에서 재검증 필요.
+- DAY 49~1 데이터는 아직 교재 원본 검증 전으로 등록하지 않음.

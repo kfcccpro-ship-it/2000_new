@@ -156,7 +156,7 @@ assert.equal(b.state().history[0].wrongCount, 1);
 assert.equal(b.state().stats['50:1'].lastWrong, b.correct(1) + '!');
 assert.equal(b.state().sessionNo, 2);
 assert.equal(b.state().nextDay, 49);
-assert.equal(b.get('start').disabled, true, 'DAY 49 must not silently use DAY 50 data');
+assert.match(b.app.innerHTML, /id="start" disabled/, 'DAY 49 must not silently use DAY 50 data');
 
 b.resetDay();
 completeNew(b);

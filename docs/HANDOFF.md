@@ -40,11 +40,10 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - GitHub main push 시 Validate → GitHub Pages 자동 배포.
 
 ## 현재 배포 상태
-- GitHub Actions 검증은 SUCCESS.
-- Pages 배포 코드는 준비 완료.
-- 저장소에서 GitHub Pages를 한 번만 활성화해야 실제 URL 배포가 시작됨: Settings → Pages → Build and deployment → Source = GitHub Actions.
-- 활성화 후 다음 main push 또는 workflow 재실행부터 자동 배포.
-
+- GitHub Pages Source = GitHub Actions 활성화 완료.
+- 2026-10-12 main 배포 성공.
+- 실제 Pages build/upload/deploy 전 단계 SUCCESS.
+- 공개 URL: https://kfcccpro-ship-it.github.io/2000_new/
 
 ## 2026 iPad Air 13 호환 기준
 - 2026 iPad Air 13(M4)의 13형 화면을 큰 iPad 프로필로 보고 가로모드 4열×2행 STEP 레이아웃을 적용한다.

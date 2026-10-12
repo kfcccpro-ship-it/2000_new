@@ -95,3 +95,11 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 배포 시 Validate/Node 런타임 회귀검사/`tests/a-design.mjs` 확인 및 GitHub Pages Deploy SUCCESS 확인 필요.
 - 실제 iPadOS Scribble 정확도와 iPad Safari에서 키보드 전환, 백업 다운로드는 실기기에서 재검증 필요.
 - DAY 49~1 데이터는 아직 교재 원본 검증 전으로 등록하지 않음.
+
+## v0.1.4 최종 배포 결과
+- 적용 커밋: `1f5d2d3b44cffe553a36abb82cb384d776f2c429` (기존 main `6eeba41f`에서 증분 수정).
+- GitHub Actions: https://github.com/kfcccpro-ship-it/2000_new/actions/runs/38204638951 — validate 및 deploy 모두 SUCCESS.
+- Validate 단계 통과: validate.mjs, node --check app.js, iPad 호환성 회귀, 키오스크 홈 회귀, 학습·백업 VM 런타임 회귀, A안 테마 검증.
+- 공개 주소: https://kfcccpro-ship-it.github.io/2000_new/
+- 소스 버전: `VERSION=0.1.4`, HTML 자산 cache-busting 모두 `v=0.1.4`.
+- 미실시: 실물 iPadOS Apple Pencil 한국어 Scribble 인식 및 Safari 다운로드·회전 수동 검증, 외부 브라우저 실제 스크린샷 시각 검사. CI 통과가 물리적 펜 UX를 보증하지는 않음.

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>iPad viewport browser QA (test only)</title>
+<style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden}iframe{width:100vw;height:100vh;display:block;border:0}#report{position:fixed;top:0;left:0;right:0;z-index:1000;background:#fff;padding:2px;font:10px sans-serif;opacity:.07;pointer-events:none}</style>
+</head>
+<body data-e2e-status="pending">
+<div id="report">Starting browser QA...</div>
+<iframe id="appFrame" title="Actual student webapp under test"></iframe>
+<script>
+(async()=>{
+"use strict";
+const KEY="wm2000pilot_v1",frame=document.getElementById("appFrame"),logs=[];
+let seq=0,doc,win;
+const assert=(ok,msg)=>{if(!ok)throw Error(msg);logs.push(msg)};
+const stamp=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const state=()=>JSON.parse(localStorage.getItem(KEY)||"null");
+const seedDay=day=>({nextDay:day,sessionNo:1,history:[],stats:{},current:null,study:null,reviewPlan:{}});
+async function mount(seed){
+ if(seed!==undefined)localStorage.setItem(KEY,JSON.stringify(seed));
+ await new Promise((resolve,reject)=>{
+   frame.onload=resolve;frame.onerror=()=>reject(Error("iframe load failed"));
+   frame.src="../index.html?qa="+(++seq);
+ });
+ doc=frame.contentDocument;win=frame.contentWindow;
+ assert(!!doc?.getElementById("app"),"actual app loaded");
+ win.confirm=()=>true;
+ win.alert=message=>{throw Error("Unexpected app alert: "+message)};
+ return doc;
+}
+function active(){
+ const a=doc.querySelector(".card.activeQuestion");
+ assert(!!a,"active question visible");
+ return a;
+}
+function writeAnswer(inputText){
+ const card=active(),input=card.querySelector("[data-in]");
+ assert(!!input,"actual input exists");
+ input.value=inputText;input.dispatchEvent(new win.Event("input",{bubbles:true}));
+ card.querySelector("[data-sub]").click();
+}
+function skipStudy(){
+ const btn=doc.getElementById("skipStudy");
+ assert(!!btn,"study has skip confirmation");
+ btn.click();
+}
+const timeoutFail=setTimeout(()=>{
+ if(document.body.dataset.e2eStatus==="pending"){
+   document.body.dataset.e2eStatus="failed";
+   document.getElementById("report").textContent="Timed out in browser QA";
+ }
+},24000);
+try{
+ // DAY49 is a real registered source, not a fabricated testing day.
+ await mount(seedDay(49));
+ assert(doc.querySelector(".kioskDay")?.textContent.includes("DAY 49"),"registered DAY49 is selectable");
+ doc.getElementById("start").click();
+ assert(doc.querySelector(".learningWord")?.textContent==="endow","DAY49 first learning cue from real data");
+ assert(doc.getElementById("learnMeaning").hidden,"meaning initially concealed");
+ await sleep(4750);
+ assert(!doc.getElementById("learnMeaning").hidden,"meaning progressively appears");
+ assert(!doc.getElementById("sentenceLast").hidden,"Korean example progressively appears");
+ assert(!doc.getElementById("nextStudy").disabled,"next learning action unlocks");
+
+ skipStudy();
+ assert(state().current?.wordKeys.length===40,"DAY49 precisely 40 graded words");
+ assert(active().querySelector(".english")?.textContent==="endow","first timed question");
+ assert(doc.getElementById("wordTimer")?.textContent==="15","15 second clock begins");
+
+ const first=win.WORD_DATA.days.find(d=>d.day===49).words;
+ assert(first.length===40&&first[39].english==="utensil","ordered DAY49 source is loaded");
+ for(let i=0;i<40;i++){
+   assert(active().dataset.k==="49:"+(i+1),"correct word ID active for index "+i);
+   if(i===1){
+     const input=active().querySelector("[data-in]");
+     input.value="외적인";
+     input.dispatchEvent(new win.Event("input",{bubbles:true}));
+     assert(state().current.drafts?.["49:2"]==="외적인","unsubmitted Pencil text stored");
+     await mount();
+     assert(active().dataset.k==="49:2","resume next unanswered word after reload");
+     assert(active().querySelector("[data-in]").value==="외적인","draft survives reload");
+   }
+   writeAnswer(first[i].answer);
+   assert(state().current.answers["49:"+(i+1)]?.result==="correct","strict original-first-meaning grading "+(i+1));
+   if((i+1)%8===0){
+     const next=doc.getElementById("next");
+     assert(next&&!next.disabled,"STEP ready after eight answers "+(i+1));
+     next.click();
+   }
+ }
+ assert(state().current?.done===true,"40 answers finish the DAY");
+ assert(state().nextDay===48,"DAY49 leads to DAY48 (not yet activated)");
+ assert(doc.querySelector(".complete h1"),"completion screen rendered");
+
+ // Previous DAY wrong words must lead the next graded batch with origin badge.
+ const y=new Date();y.setDate(y.getDate()-1);
+ const reviewSeed=seedDay(50);
+ reviewSeed.sessionNo=2;
+ reviewSeed.history=[{id:1,date:stamp(y),type:"new",bookDay:49,total:40,
+   wordKeys:Array.from({length:40},(_,i)=>"49:"+(i+1)),everWrong:["49:1"],wrongCount:1,retryRounds:1}];
+ reviewSeed.stats={"49:1":{wrong:1,correct:0,lastWrong:"오답",attempts:[]}};
+ await mount(reviewSeed);
+ assert(doc.querySelector(".dueNotice"),"prior error notice visible");
+ doc.getElementById("start").click();
+ assert(doc.querySelector(".learningWord")?.textContent==="endow","due word appears first in study");
+ skipStudy();
+ assert(state().current.wordKeys.length===41,"yesterday error plus new 40");
+ assert(state().current.wordKeys[0]==="49:1","yesterday error first");
+ assert(active().querySelector(".originBadge")?.textContent.includes("DAY 49"),"origin DAY label visible");
+ assert(doc.getElementById("wordTimer")?.textContent==="15","new timed word starts at 15");
+ const beforeClock=state().current.clock?.deadline;
+ await sleep(4800);
+ const beforeReload=Number(doc.getElementById("wordTimer")?.textContent);
+ assert(beforeReload>=9&&beforeReload<=11,"visible countdown decreases");
+ await mount();
+ assert(state().current.clock?.deadline===beforeClock,"timed word deadline persists after reload");
+ const afterReload=Number(doc.getElementById("wordTimer")?.textContent);
+ assert(afterReload<=beforeReload+1,"reload did not reset 15s");
+ await sleep(10800);
+ assert(state().current.answers["49:1"]?.status==="relearn","expired word moves to existing relearn gate");
+ assert(state().stats["49:1"]?.lastWrong==="시간 초과","deadline failure recorded explicitly");
+ assert(!!doc.querySelector(".focusReview"),"focus correction display visible");
+ assert(doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+3,"no horizontal viewport overflow");
+
+ document.body.dataset.e2eStatus="passed";
+ document.getElementById("report").textContent="PASS "+logs.length+" checks";
+ clearTimeout(timeoutFail);
+}catch(e){
+ document.body.dataset.e2eStatus="failed";
+ document.getElementById("report").textContent="FAIL "+e.message+" | completed "+logs.length+" checks";
+ console.error(e);
+ clearTimeout(timeoutFail);
+}
+})();
+</script>
+</body></html>

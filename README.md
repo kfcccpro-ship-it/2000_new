@@ -20,3 +20,5 @@ Word Master 수능 2000 기반 iPad Apple Pencil 영어→한글 필기평가 �
 - v0.2.0: DAY 관리자 직접 선택, 단계적 한글 예문/그림 학습, 15초 집중 필기, 전날 오답과 3/7일 간격 복습, 출처 확인 '중학' 태그(DAY 50 검증분), 기존 기록 유지.
 
 - v0.2.1: 사용자 기존 WordMaster 원데이터에서 DAY49 40단어/첫 뜻 등록, 40개 상황문장/그림단서, 필기 타이머 절대 마감시각 저장 및 실제 브라우저 iPad 화면 회귀검사.
+
+- iPad viewport 실동작 검증: Actions의 `Real Chromium iPad viewport interaction regression`, 스크린샷 artifact `ipad-chromium-viewport-qa` 확인.

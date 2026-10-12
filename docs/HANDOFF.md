@@ -137,3 +137,13 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 2개의 DAY가 등록되면 관리자 수기 입력 DAY49/50 지원. DAY48~1은 데이터 검증 전까지 선택 차단.
 - 기존 localStorage 키 `wm2000pilot_v1` 및 기록 schema 1, 8단어/STEP, 필수 과거 오답·복습 규칙 유지.
 - iPad 브라우저 QA는 Chromium으로 크기만 근사한 테스트. 실제 iPadOS Safari/Apple Pencil 한글 손글씨 인식은 테스트 장비에서 수동 확인 필요.
+
+
+### Chromium 실제 브라우저 시뮬레이션 추가
+- `tests/browser-ipad-qa.html` + `tests/browser-ipad-run.mjs`을 CI에 추가. Linux GitHub runner의 Chrome/Chromium을 실제로 실행하여 1112×834 및 1366×1024 viewport에서 다음 단계를 테스트:
+  1. DAY49 원본 40개를 브라우저에서 하나씩 정확 제출하고 DAY48로 진도 이동하는지.
+  2. DAY49 학습 카드에서 첫 뜻과 예문이 단계별 등장하는지.
+  3. 한글 입력 중 미제출 문자가 페이지 재로드 후 유지되는지.
+  4. 전날 DAY49 오답이 다음 DAY50보다 먼저 나오며 출처 표시되는지.
+  5. 15초 타이머가 실제로 카운트다운되고 새로고침해도 리셋되지 않는지, 타임아웃이 오답 재학습으로 이어지는지.
+- 두 viewport 스크린샷을 Actions artifact `ipad-chromium-viewport-qa`로 업로드. 테스트는 Chrome 리눅스 기반으로 Safari Pencil 실물 인증이 아님.

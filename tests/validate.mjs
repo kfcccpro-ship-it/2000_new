@@ -4,3 +4,14 @@ if(!s.includes("penetrate")||!s.includes("침투하다")||!s.includes("fluctuati
 const app=fs.readFileSync("app.js","utf8");
 for(const x of ["STEP=8","st.sessionNo%4===0","relearnDone","localStorage"]) if(!app.includes(x)) throw new Error("missing "+x);
 console.log("PASS pilot data + 8-word step + 3+1 review + relearn flow");
+import vm from "node:vm";
+const ctx=vm.createContext({window:{}});
+vm.runInContext(fs.readFileSync("data/day50.js","utf8"),ctx);
+vm.runInContext(fs.readFileSync("data/day49.js","utf8"),ctx);
+vm.runInContext(fs.readFileSync("data/learning-day50.js","utf8"),ctx);
+vm.runInContext(fs.readFileSync("data/learning-day49.js","utf8"),ctx);
+const prev=ctx.window.WORD_DATA.days.find(d=>d.day===49);
+if(!prev||prev.words.length!==40||prev.words[0].english!=="endow"||prev.words[39].english!=="utensil")throw Error("DAY49 source bad");
+if(!prev.words.every((w,i)=>w.no===i+1&&w.sourceOrdinal===1921+i&&w.answer&&w.sourceFirstMeaning))throw Error("DAY49 source mapping incorrect");
+if(ctx.window.WORD_LEARNING.day49.length!==40||ctx.window.WORD_LEARNING.day49.some((x,i)=>x.english!==prev.words[i].english||!x.sentence[0]||!x.sentence[1]))throw Error("DAY49 example metadata incorrect");
+console.log("PASS DAY49 40 original-order words + first meanings + 40 learning cards");

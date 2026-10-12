@@ -24,7 +24,7 @@ a.get("applyManualDay").onclick();
 assert.equal(JSON.stringify(a.state()),original,"changing DAY during test must be rejected");
 const blank=browser();
 blank.navAdmin.onclick();
-blank.get("manualDay").value="49";
+blank.get("manualDay").value="48";
 blank.get("applyManualDay").onclick();
 assert.equal(blank.state()?.nextDay??50,50,"unregistered DAY must not change state");
 blank.get("manualDay").value="50";
@@ -45,10 +45,8 @@ assert.equal(b.state().current.type,"new");
 assert.ok(b.state().current.dueKeys.includes("50:1"));
 assert.match(b.app.innerHTML,/어제 오답 · DAY 50/);
 assert.match(b.app.innerHTML,/오답 1회 · 집중/);
-// Simulate an already-entered DAY 49 dictionary in a test-only sandbox: ensure DAY 50's
-// previous-day error appears before the 40 newer words, and retains its original DAY label.
+// The real verified DAY49 source must include a prior DAY50 mistake ahead of 40 new words.
 const cross=browser(crossStore);
-cross.window.WORD_DATA.days.push({day:49,words:Array.from({length:40},(_,i)=>({day:49,no:i+1,english:"testword"+(i+1),answer:"뜻"+(i+1)}))});
 cross.navAdmin.onclick();
 cross.get("manualDay").value="49";
 cross.get("applyManualDay").onclick();
@@ -58,6 +56,8 @@ cross.begin();
 assert.equal(cross.state().current.bookDay,49);
 assert.equal(cross.state().current.wordKeys.length,41,"due words must be added, not replace the new 40");
 assert.equal(cross.state().current.wordKeys[0],"50:1","previous DAY should be first");
+assert.equal(cross.window.WORD_DATA.days.find(d=>d.day===49).words[0].english,"endow");
+assert.equal(cross.window.WORD_DATA.days.find(d=>d.day===49).words[39].english,"utensil");
 assert.match(cross.app.innerHTML,/어제 오답 · DAY 50/);
 const c=browser();
 c.get("start").onclick();

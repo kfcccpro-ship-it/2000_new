@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html styles.css app.js manifest.webmanifest VERSION _site/
-          cp data/day50.js data/learning-day50.js _site/data/
+          cp data/day50.js data/day49.js data/learning-day50.js data/learning-day49.js _site/data/
       - name: Upload Pages artifact
         if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v4

@@ -4,7 +4,9 @@ import vm from 'node:vm';
 
 const appCode = fs.readFileSync('app.js', 'utf8');
 const dataCode = fs.readFileSync('data/day50.js', 'utf8');
+const day49Code = fs.readFileSync('data/day49.js', 'utf8');
 const learningCode = fs.readFileSync('data/learning-day50.js', 'utf8');
+const learning49Code = fs.readFileSync('data/learning-day49.js', 'utf8');
 
 function browser(storage = new Map(), confirmAnswer = true) {
   let html = '';
@@ -104,7 +106,9 @@ function browser(storage = new Map(), confirmAnswer = true) {
     addEventListener() {},
     alert() {alertCount++;}, confirm() {return confirmAnswer;}, console});
   vm.runInContext(dataCode, context, {filename: 'data/day50.js'});
+  vm.runInContext(day49Code, context, {filename: 'data/day49.js'});
   vm.runInContext(learningCode, context, {filename: 'data/learning-day50.js'});
+  vm.runInContext(learning49Code, context, {filename: 'data/learning-day49.js'});
   vm.runInContext(appCode, context, {filename: 'app.js'});
   const state = () => JSON.parse(localStorage.getItem('wm2000pilot_v1'));
   const card = k => {const c = cards.get(k); assert.ok(c, "card missing: " + k); return c;};
@@ -172,7 +176,8 @@ assert.equal(b.state().history[0].wrongCount, 1);
 assert.equal(b.state().stats['50:1'].lastWrong, b.correct(1) + '!');
 assert.equal(b.state().sessionNo, 2);
 assert.equal(b.state().nextDay, 49);
-assert.match(b.app.innerHTML, /id="start" disabled/, 'DAY 49 must not silently use DAY 50 data');
+assert.match(b.app.innerHTML, /DAY 49/, 'DAY 49 becomes available after DAY 50');
+assert.doesNotMatch(b.app.innerHTML, /id="start" disabled/, 'DAY 49 must now be available');
 
 b.resetDay();
 completeNew(b);

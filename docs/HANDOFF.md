@@ -147,3 +147,12 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
   4. 전날 DAY49 오답이 다음 DAY50보다 먼저 나오며 출처 표시되는지.
   5. 15초 타이머가 실제로 카운트다운되고 새로고침해도 리셋되지 않는지, 타임아웃이 오답 재학습으로 이어지는지.
 - 두 viewport 스크린샷을 Actions artifact `ipad-chromium-viewport-qa`로 업로드. 테스트는 Chrome 리눅스 기반으로 Safari Pencil 실물 인증이 아님.
+
+## v0.2.1 배포 최종 감사 (2026-10-12)
+- 실제 WordMaster 사용자 Library의 순번 1921~1960에 해당하는 DAY49를 40개 등록. DAY50 순번 일치율 40/40. 교재 오탈자/한글 의미 검증표 `docs/DAY49_SOURCE_AUDIT.md`.
+- 앱 변경 커밋: `734772826e8c4509b8f93256487ad1d5e195a3d4`, 실행형 Chromium 검사 커밋: `71cf8c2bb370157ab80815a8911c2743f2329eda`, 최종 검증 완료: `1b87ebbeafea57254018e6997622bbc7040a270f`.
+- Actions run: https://github.com/kfcccpro-ship-it/2000_new/actions/runs/38208879013 — 모든 Validate 및 Pages Deploy SUCCESS.
+- 브라우저 자동검사 성공: 원문 40개 채점, 실제 DAY49→48, 전날 오류 우선, DAY 배지, 타이머 새로고침/만료, 미제출 손글씨/재개, 두 iPad 해상도 근사 Chromium 테스트.
+- 스크린샷 artifact: `ipad-chromium-viewport-qa` (해당 Actions run의 Artifacts).
+- 남은 필수 단계: 실물 iPad Pro 10.5(Apple Pencil 1세대, iPadOS 17 계열일 수 있음) 및 Air13(M4)의 Safari Scribble/키보드 성능 검사. 지침 `docs/IPAD_REAL_DEVICE_CHECKLIST.md`.
+- 본 검증은 Chromium 브라우저 기반으로 iPadOS 실기기 필기인식 호환성 **증명 아님**. 실제 15초 제한은 필기 입력/인식이 느린 구형 기기에서 과도할 수 있음.

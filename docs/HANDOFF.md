@@ -52,3 +52,8 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 기기명을 하드코딩하지 않고 실제 CSS viewport 폭과 방향에 따라 자동 레이아웃을 선택한다.
 - 가상 키보드가 올라오면 sticky 하단바를 해제하고 현재 입력 카드가 화면 중앙에 오도록 한다.
 - iPad Pro 10.5는 기존 2열 레이아웃을 유지해 작은 화면에서 입력칸이 좁아지지 않도록 한다.
+
+
+## Pages 활성화 확인
+- 2026-10-12 사용자 화면에서 Settings → Pages → Source = GitHub Actions 저장 완료를 확인.
+- 이후 main push부터 실제 Pages build/upload/deploy 단계가 실행되어야 함.

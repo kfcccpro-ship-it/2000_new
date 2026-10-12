@@ -24,3 +24,5 @@ Word Master 수능 2000 기반 iPad Apple Pencil 영어→한글 필기평가 �
 - iPad viewport 실동작 검증: Actions의 `Real Chromium iPad viewport interaction regression`, 스크린샷 artifact `ipad-chromium-viewport-qa` 확인.
 
 - v0.2.2: 단순한 히어로에서 학습/평가를 독립 진입, 기록과 진도 각각 보존, 학습 완료 후 시험 자동 실행 없음.
+
+- v0.2.3: 강제 새로고침·앱 재진입은 항상 학습/평가 히어로부터 표시. 단어 진도·채점·필기 입력은 버튼 선택 시 이어하기.

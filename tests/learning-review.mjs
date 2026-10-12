@@ -73,7 +73,11 @@ assert.equal(c.get("nextStudy").disabled,false,"learning next unlocks only after
 c.get("nextStudy").onclick();
 assert.equal(c.state().study.index,1,"one-step-per-word study route");
 const paused=browser(c.storage);
+assert.match(paused.app.innerHTML,/id="startLearning"/,"study reload defaults to hero");
+assert.match(paused.app.innerHTML,/id="startEvaluation"/);
 assert.equal(paused.state().study.index,1,"study index must survive reload");
+paused.get("startLearning").onclick();
+assert.equal(paused.state().study.index,1,"resume selected study instead of restarting");
 const clock=browser();
 clock.begin();
 assert.equal(clock.get("wordTimer").textContent,"15");
@@ -126,4 +130,17 @@ assert.match(studyOnly.app.innerHTML,/id="startLearning"/);
 studyOnly.get("startEvaluation").onclick();
 assert.equal(studyOnly.state().current.type,"new");
 
-console.log("PASS two independent modes, study-only completion, resume, due review and timer");
+
+const legacyStudyStorage=new Map([["wm2000pilot_v1",JSON.stringify({
+ nextDay:50,sessionNo:1,history:[],stats:{},current:null,
+ study:{day:50,keys:["50:1","50:2"],index:1,created:1,done:false},
+ reviewPlan:{},activeMode:"study"
+})]]);
+const fromLegacy=browser(legacyStudyStorage);
+assert.match(fromLegacy.app.innerHTML,/id="startLearning"/,"previously open learning must not bypass hero");
+assert.match(fromLegacy.app.innerHTML,/id="startEvaluation"/,"evaluation choice stays visible");
+assert.equal(fromLegacy.state().study.index,1,"legacy learning state preserved");
+fromLegacy.get("startLearning").onclick();
+assert.equal(fromLegacy.state().study.index,1,"legacy study resumes from saved word");
+
+console.log("PASS fresh hero after reload, study/evaluation independently resumed, due review and timer");

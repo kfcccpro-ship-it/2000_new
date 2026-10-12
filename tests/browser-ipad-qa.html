@@ -63,6 +63,11 @@ try{
  assert(!!doc.getElementById("startEvaluation")&&!doc.getElementById("startEvaluation").disabled,"assessment choice ready");
  doc.getElementById("startLearning").click();
  assert(doc.querySelector(".learningWord")?.textContent==="endow","DAY49 first learning cue from real data");
+ await mount();
+ assert(!!doc.getElementById("startLearning")&&!!doc.getElementById("startEvaluation"),"reopening the app returns to two-button hero");
+ assert(state().study?.index===0&&!state().current,"saved study survives boot without auto-launching assessment");
+ doc.getElementById("startLearning").click();
+ assert(doc.querySelector(".learningWord")?.textContent==="endow","learning resumes at the original card");
  assert(doc.getElementById("learnMeaning").hidden,"meaning initially concealed");
  await sleep(4750);
  assert(!doc.getElementById("learnMeaning").hidden,"meaning progressively appears");
@@ -85,7 +90,10 @@ try{
      input.dispatchEvent(new win.Event("input",{bubbles:true}));
      assert(state().current.drafts?.["49:2"]==="외적인","unsubmitted Pencil text stored");
      await mount();
-     assert(active().dataset.k==="49:2","resume next unanswered word after reload");
+     assert(!!doc.getElementById("startLearning")&&!!doc.getElementById("startEvaluation"),"assessment reload displays dual-mode hero");
+     assert(state().current.drafts?.["49:2"]==="외적인","unsent input preserved while hero shown");
+     doc.getElementById("startEvaluation").click();
+     assert(active().dataset.k==="49:2","resume next unanswered word after selecting assessment");
      assert(active().querySelector("[data-in]").value==="외적인","draft survives reload");
    }
    writeAnswer(first[i].answer);
@@ -121,7 +129,9 @@ try{
  const beforeReload=Number(doc.getElementById("wordTimer")?.textContent);
  assert(beforeReload>=9&&beforeReload<=11,"visible countdown decreases");
  await mount();
+ assert(!!doc.getElementById("startLearning")&&!!doc.getElementById("startEvaluation"),"clock reload displays dual-mode hero");
  assert(state().current.clock?.deadline===beforeClock,"timed word deadline persists after reload");
+ doc.getElementById("startEvaluation").click();
  const afterReload=Number(doc.getElementById("wordTimer")?.textContent);
  assert(afterReload<=beforeReload+1,"reload did not reset 15s");
  await sleep(10800);

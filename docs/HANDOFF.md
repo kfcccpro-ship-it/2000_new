@@ -166,3 +166,11 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 학습은 완료시 `st.study.done=true`, 기록을 유지하며 다시 학습도 가능. 평가 시작 시 `st.study`를 지우지 않음.
 - Mobbin A안 크림/청록, iPad 가로 2개 큼직한 버튼, 모바일에서는 세로 배치. 관리자의 DAY 직접 지정 유지.
 - 테스트: 40개 학습-only 완료 기록 부재 확인, 학습⇄평가 중단·진행 상태 보존, 기존 오답/타이머/백업, iPad Chromium 화면 검증.
+
+
+## v0.2.3 — 새로고침 시 항상 히어로 표시 (2026-10-12)
+- 사용자 실기기/PC 화면에서 강제 새로고침해도 penetrate 학습 화면으로 바로 복귀함을 확인. 원인은 캐시가 아니라 v0.2.2 앱 진입부 `render()`가 저장된 `activeMode:"study"`에 따라 이전 학습 화면을 자동 열던 것.
+- 수정: 초기 로딩은 반드시 `home()`에서 시작하여 **학습/평가 2개 대형 선택 버튼**을 표시. 두 기록 `st.study`와 `st.current`, `history`, `reviewPlan`, `stats`, `wm2000pilot_v1` 키를 모두 보존. 사용자가 해당 버튼을 누르면 이전 진행을 선택적으로 복원.
+- `VERSION`/HTML css·script cache-busting `v=0.2.3`. 필요하면 `https://kfcccpro-ship-it.github.io/2000_new/?v=0.2.3`로 접속해 HTML URL 캐시도 분리 가능.
+- 회귀: 이전 `activeMode:study`로 저장된 v0.2.2의 기존 기록으로 새로고침 → 두 버튼 표시 → 학습 이어하기, 평가 오답·진도 이어하기, 미제출 한글 입력 유지, 15초 타이머 deadline 유지 및 시간 만료, iPad 1112x834/1366x1024 Chromium 동작.
+- 주의: 평가의 절대 마감시간은 기존 정책 그대로 유지하여 앱을 떠나 있는 시간이 타이머에 포함됨. 별도의 일시정지/재개 정책 변경은 하지 않음.

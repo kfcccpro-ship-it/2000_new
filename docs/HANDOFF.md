@@ -33,3 +33,9 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 기능 검증을 위해 DAY 50의 40단어만 우선 탑재.
 - 필기인식 UX가 iPad에서 통과하면 DAY 49~1 데이터 연결 및 전체 50 DAY 자동 진행을 확장.
 - GitHub main push 시 Validate → GitHub Pages 자동 배포.
+
+## 현재 배포 상태
+- GitHub Actions 검증은 SUCCESS.
+- Pages 배포 코드는 준비 완료.
+- 저장소에서 GitHub Pages를 한 번만 활성화해야 실제 URL 배포가 시작됨: Settings → Pages → Build and deployment → Source = GitHub Actions.
+- 활성화 후 다음 main push 또는 workflow 재실행부터 자동 배포.

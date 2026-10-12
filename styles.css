@@ -26,3 +26,28 @@ body.keyboardActive #app{padding-bottom:24px}
 @media(max-width:760px){
   #app{padding-left:11px;padding-right:11px}
 }
+
+/* v0.1.2 kiosk-style main page */
+.kioskHome{
+  min-height:calc(var(--app-vh,100dvh) - 110px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  max-width:900px;margin:0 auto;padding:36px 20px;
+}
+.kioskEyebrow{font-size:15px;font-weight:900;letter-spacing:.18em;color:var(--blue);margin-bottom:12px}
+.kioskDay{font-size:clamp(58px,9vw,112px);line-height:.95;font-weight:950;letter-spacing:-.05em}
+.kioskMeta{margin-top:18px;font-size:clamp(18px,2.2vw,26px);font-weight:800;color:var(--muted)}
+.kioskStart{width:min(620px,100%);min-height:96px;margin-top:40px;border-radius:22px;font-size:clamp(28px,3vw,38px);box-shadow:0 10px 24px #4e7ed833}
+.kioskHint{margin-top:18px;font-size:16px;font-weight:750;color:var(--muted)}
+.kioskAdjust{margin-top:28px;width:min(420px,100%);border-top:1px solid var(--line);padding-top:18px;color:var(--muted)}
+.kioskAdjust summary{cursor:pointer;list-style:none;font-weight:850;font-size:15px}
+.kioskAdjust summary::-webkit-details-marker{display:none}
+.kioskAdjust summary::after{content:" ▾";font-size:12px}
+.kioskAdjust[open] summary::after{content:" ▴"}
+.kioskAdjustBody{display:flex;justify-content:center;gap:8px;margin-top:12px}
+.kioskAdjustBody select{min-width:150px}
+.kioskWarn{margin:10px 0 0;color:var(--bad);font-weight:800;font-size:14px}
+.kioskCycle{margin-top:20px;font-size:13px;font-weight:800;color:#8a94a5}
+@media(max-width:760px){
+  .kioskHome{min-height:calc(var(--app-vh,100dvh) - 92px);padding:28px 12px}
+  .kioskStart{min-height:84px;margin-top:30px}
+}

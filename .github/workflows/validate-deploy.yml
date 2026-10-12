@@ -27,6 +27,8 @@ jobs:
         run: node tests/ipad-compat.mjs
       - name: Kiosk home regression
         run: node tests/kiosk-home.mjs
+      - name: Runtime learning and backup regression
+        run: node tests/runtime-flow.mjs
 
   deploy:
     needs: validate

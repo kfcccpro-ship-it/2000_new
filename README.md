@@ -12,3 +12,5 @@ Word Master 수능 2000 기반 iPad Apple Pencil 영어→한글 필기평가 �
 - GitHub Actions 검증 + GitHub Pages 자동 배포
 
 자세한 개발 기준은 `docs/HANDOFF.md` 참고.
+
+- v0.1.3: 관리자 JSON 학습기록 백업·복원 및 실제 상태 전이 회귀검사. DAY 49~1 교재 데이터 등록 대기.

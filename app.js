@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const VER="0.1.2",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
+const VER="0.1.3",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
 const DATA=window.WORD_DATA;let route="test";let st=load();
 function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null}}
 function load(){try{return Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){return base()}}
@@ -36,7 +36,7 @@ function home(){
   app.innerHTML=`<section class="kioskHome">
     <div class="kioskEyebrow">${rv?"REVIEW DAY":"TODAY"}</div>
     <div class="kioskDay">${rv?"오답 점검":"DAY "+st.nextDay}</div>
-    <div class="kioskMeta">${rv?pool.length+"단어":"40단어 · 8단어 × 5 STEP"}</div>
+    <div class="kioskMeta">${rv?(pool.length?pool.length+"단어":"복습할 오답이 없습니다"):"40단어 · 8단어 × 5 STEP"}</div>
     <button class="primary kioskStart" id="start" ${canStart?"":"disabled"}>${rv?"오답 점검 시작":"테스트 시작"}</button>
     <div class="kioskHint">Apple Pencil로 한글 뜻 쓰기 → 인식 확인 → 제출</div>
     <details class="kioskAdjust">
@@ -52,7 +52,7 @@ function home(){
   document.getElementById("saveDay").onclick=()=>{st.nextDay=+document.getElementById("daySel").value;save();home()};
   document.getElementById("start").onclick=()=>start();
 }
-function start(){if(isReview()){st.current={id:Date.now(),type:"review",wordKeys:reviewPool(),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}else{let d=day(st.nextDay);if(!d)return alert("v0.1.0 파일럿은 DAY 50만 먼저 검증합니다.");st.current={id:Date.now(),type:"new",bookDay:d.day,wordKeys:d.words.map(key),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}save();session()}
+function start(){if(isReview()){st.current={id:Date.now(),type:"review",wordKeys:reviewPool(),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}else{let d=day(st.nextDay);if(!d)return alert("DAY "+st.nextDay+" 단어가 아직 등록되지 않았습니다. 교재 데이터 등록 후 이용해 주세요.");st.current={id:Date.now(),type:"new",bookDay:d.day,wordKeys:d.words.map(key),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}save();session()}
 function phaseKeys(c){return c.phase==="main"?c.wordKeys:(c.retryKeys||[])}
 function slice(c){let a=phaseKeys(c),s=c.step*STEP;return a.slice(s,s+STEP)}
 function totalSteps(c){return Math.max(1,Math.ceil(phaseKeys(c).length/STEP))}
@@ -93,6 +93,46 @@ function canvas(cv,onInk){
 function clear(cv){let x=cv.getContext("2d");x.save();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);x.restore()}
 function updateNext(c,ks){let token=c.phase+":"+c.round+":"+c.step,ok=ks.every(k=>c.answers[k]?.status==="done"&&c.answers[k]?.token===token),b=document.getElementById("next");b.disabled=!ok;if(ok)document.getElementById("msg").textContent="이 STEP을 모두 끝냈습니다.";b.onclick=()=>{c.step++;save();c.step>=totalSteps(c)?endPhase():session()}}
 function endPhase(){let c=st.current;if(c.phase==="main"){if(c.everWrong.length){c.phase="retry";c.retryKeys=[...c.everWrong];c.step=0;c.round=1;c.roundWrong=[];c.answers={};save();return session()}return finish()}if(c.roundWrong.length){c.retryKeys=[...new Set(c.roundWrong)];c.roundWrong=[];c.step=0;c.round++;c.answers={};save();return session()}finish()}
-function finish(){let c=st.current,wrong=[...new Set(c.everWrong)],h={id:c.id,date:new Date().toISOString().slice(0,10),type:c.type,bookDay:c.bookDay||null,total:c.wordKeys.length,everWrong:wrong,wrongCount:wrong.length,retryRounds:c.round};st.history.push(h);if(c.type==="new")st.nextDay=Math.max(1,c.bookDay-1);st.sessionNo++;c.done=true;save();app.innerHTML=`<section class="panel complete"><h1>${c.type==="review"?"오답 점검 완료":"오늘 평가 완료"}</h1><div class="score">${c.wordKeys.length-wrong.length}/${c.wordKeys.length}</div><p>첫 평가 기준입니다. 오답은 모두 재학습과 재시험을 통과했습니다.</p><button class="primary" id="home">오늘 화면으로</button></section>`;document.getElementById("home").onclick=()=>{st.current=null;save();home()}}
-function admin(){let hist=[...st.history].reverse(),stats=Object.entries(st.stats).map(([k,v])=>({k,...v,w:byKey(k)})).filter(x=>x.w).sort((a,b)=>b.wrong-a.wrong),tw=stats.reduce((a,x)=>a+x.wrong,0);app.innerHTML=`<section class="panel"><h1>관리자 대시보드</h1><p class="muted">이 기기의 localStorage에만 저장됩니다.</p></section><div class="metrics" style="margin-top:13px"><div class="metric"><small>완료 세션</small><b>${hist.length}</b></div><div class="metric"><small>누적 오답</small><b>${tw}</b></div><div class="metric"><small>오답 단어</small><b>${stats.filter(x=>x.wrong).length}</b></div><div class="metric"><small>다음 신규 DAY</small><b>${st.nextDay}</b></div></div><section class="panel" style="margin-top:13px"><h2>자주 틀린 단어</h2><div class="tableWrap">${stats.filter(x=>x.wrong).length?`<table class="table"><thead><tr><th>영어</th><th>정답</th><th>오답 횟수</th><th>최근 잘못 입력</th></tr></thead><tbody>${stats.filter(x=>x.wrong).slice(0,30).map(x=>`<tr><td><b>${esc(x.w.english)}</b></td><td>${esc(x.w.answer)}</td><td>${x.wrong}</td><td>${esc(x.lastWrong||"-")}</td></tr>`).join("")}</tbody></table>`:"아직 오답이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>세션 기록</h2><div class="tableWrap">${hist.length?`<table class="table"><thead><tr><th>날짜</th><th>구분</th><th>범위</th><th>첫 평가</th><th>오답</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${h.date}</td><td>${h.type==="review"?"복습":"신규"}</td><td>${h.type==="review"?"오답만":"DAY "+h.bookDay}</td><td>${h.total-h.wrongCount}/${h.total}</td><td>${h.wrongCount}</td></tr>`).join("")}</tbody></table>`:"완료 기록이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><button class="danger" id="reset">전체 기록 초기화</button></section>`;document.getElementById("reset").onclick=()=>{if(confirm("전체 기록을 삭제할까요?")){st=base();save();admin()}}}
+function finish(){let c=st.current,wrong=[...new Set(c.everWrong)],h={id:c.id,date:new Date().toISOString().slice(0,10),type:c.type,bookDay:c.bookDay||null,total:c.wordKeys.length,everWrong:wrong,wrongCount:wrong.length,retryRounds:c.round};st.history.push(h);if(c.type==="new")st.nextDay=Math.max(1,c.bookDay-1);st.sessionNo++;c.done=true;save();app.innerHTML=`<section class="panel complete"><h1>${c.type==="review"?"오답 점검 완료":"오늘 평가 완료"}</h1><div class="score">${c.type==="review"&&!c.wordKeys.length?"오답 없음":(c.wordKeys.length-wrong.length)+"/"+c.wordKeys.length}</div><p>${c.type==="review"&&!c.wordKeys.length?"지난 3회 신규 학습에서 틀린 단어가 없습니다.":"첫 평가 기준입니다. 오답은 모두 재학습과 재시험을 통과했습니다."}</p><button class="primary" id="home">오늘 화면으로</button></section>`;document.getElementById("home").onclick=()=>{st.current=null;save();home()}}
+function checkRestoreData(payload){
+  if(!payload||payload.format!=="wm2000-local-backup"||payload.schema!==1)throw Error("이 웹앱의 백업 파일이 아닙니다.");
+  const s=payload.state,object=v=>v&&typeof v==="object"&&!Array.isArray(v);
+  const keyOK=k=>typeof k==="string"&&/^([1-9]|[1-4]\d|50):([1-9]|[1-3]\d|40)$/.test(k);
+  if(!object(s)||!Number.isInteger(s.nextDay)||s.nextDay<1||s.nextDay>50||!Number.isInteger(s.sessionNo)||s.sessionNo<1||
+     !Array.isArray(s.history)||s.history.length>10000||!object(s.stats)||Object.keys(s.stats).length>2000)throw Error("학습기록 구조가 올바르지 않습니다.");
+  for(const h of s.history){if(!object(h)||!["new","review"].includes(h.type)||!Array.isArray(h.everWrong)||!h.everWrong.every(keyOK)||!Number.isInteger(h.total)||h.total<0)throw Error("세션 기록이 손상되었습니다.");}
+  for(const [k,v] of Object.entries(s.stats)){if(!keyOK(k)||!object(v)||!Number.isInteger(v.wrong)||v.wrong<0||!Number.isInteger(v.correct)||v.correct<0||!Array.isArray(v.attempts))throw Error("오답 통계가 손상되었습니다.");}
+  const c=s.current;
+  if(c!==null){if(!object(c)||!["new","review"].includes(c.type)||!["main","retry"].includes(c.phase)||!Array.isArray(c.wordKeys)||
+    !c.wordKeys.every(keyOK)||!Array.isArray(c.everWrong)||!c.everWrong.every(keyOK)||!Array.isArray(c.roundWrong)||!c.roundWrong.every(keyOK)||
+    !object(c.answers)||!Number.isInteger(c.step)||c.step<0||!Number.isInteger(c.round)||c.round<1||
+    (c.phase==="retry"&&(!Array.isArray(c.retryKeys)||!c.retryKeys.every(keyOK))))throw Error("진행 중 평가 기록이 손상되었습니다.");
+    if(!c.done&&c.wordKeys.some(k=>!byKey(k)))throw Error("진행 중인 DAY의 단어 데이터가 현재 앱에 없습니다.");
+  }
+  return s;
+}
+function backupRecords(){
+  const msg=document.getElementById("backupMsg");
+  try{
+    const payload={format:"wm2000-local-backup",schema:1,appVersion:VER,exportedAt:new Date().toISOString(),state:st};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
+    const uri=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=uri;a.download="wm2000-backup-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(uri),3000);
+    msg.textContent="백업 파일을 저장했습니다. 별도 장소에 보관하세요.";
+  }catch(e){msg.textContent="백업 실패: "+e.message;}
+}
+async function restoreRecords(input){
+  const file=input.files?.[0];if(!file)return;
+  try{
+    if(file.size>8*1024*1024)throw Error("백업 파일이 너무 큽니다(8MB 초과).");
+    const restored=checkRestoreData(JSON.parse(await file.text()));
+    if(!confirm("현재 학습기록을 백업 파일의 "+restored.history.length+"회 세션 기록으로 교체할까요? 이 기기의 현재 기록은 덮어써집니다."))return;
+    const previous=st;st=restored;
+    try{save()}catch(e){st=previous;throw e}
+    admin();document.getElementById("backupMsg").textContent="백업 복원 완료 · "+restored.history.length+"회 세션";
+  }catch(e){document.getElementById("backupMsg").textContent="복원 실패: "+e.message;}
+  finally{input.value="";}
+}
+function admin(){let hist=[...st.history].reverse(),stats=Object.entries(st.stats).map(([k,v])=>({k,...v,w:byKey(k)})).filter(x=>x.w).sort((a,b)=>b.wrong-a.wrong),tw=stats.reduce((a,x)=>a+x.wrong,0);app.innerHTML=`<section class="panel"><h1>관리자 대시보드</h1><p class="muted">이 기기의 localStorage에만 저장됩니다.</p></section><div class="metrics" style="margin-top:13px"><div class="metric"><small>완료 세션</small><b>${hist.length}</b></div><div class="metric"><small>누적 오답</small><b>${tw}</b></div><div class="metric"><small>오답 단어</small><b>${stats.filter(x=>x.wrong).length}</b></div><div class="metric"><small>다음 신규 DAY</small><b>${st.nextDay}</b></div></div><section class="panel" style="margin-top:13px"><h2>자주 틀린 단어</h2><div class="tableWrap">${stats.filter(x=>x.wrong).length?`<table class="table"><thead><tr><th>영어</th><th>정답</th><th>오답 횟수</th><th>최근 잘못 입력</th></tr></thead><tbody>${stats.filter(x=>x.wrong).slice(0,30).map(x=>`<tr><td><b>${esc(x.w.english)}</b></td><td>${esc(x.w.answer)}</td><td>${x.wrong}</td><td>${esc(x.lastWrong||"-")}</td></tr>`).join("")}</tbody></table>`:"아직 오답이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>세션 기록</h2><div class="tableWrap">${hist.length?`<table class="table"><thead><tr><th>날짜</th><th>구분</th><th>범위</th><th>첫 평가</th><th>오답</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${h.date}</td><td>${h.type==="review"?"복습":"신규"}</td><td>${h.type==="review"?"오답만":"DAY "+h.bookDay}</td><td>${h.total-h.wrongCount}/${h.total}</td><td>${h.wrongCount}</td></tr>`).join("")}</tbody></table>`:"완료 기록이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>학습기록 백업 · 복원</h2><p class="muted">기록은 이 기기의 브라우저에만 저장됩니다. 기기 변경이나 데이터 삭제 전에 백업 파일을 보관하세요.</p><div class="row"><button class="secondary" id="exportBackup">백업 파일 저장 (.json)</button><button class="secondary" id="importBackup">백업 파일 복원</button><input id="restoreBackup" type="file" accept=".json,application/json" hidden></div><p id="backupMsg" role="status" class="small" aria-live="polite"></p></section><section class="panel" style="margin-top:13px"><button class="danger" id="reset">전체 기록 초기화</button></section>`;document.getElementById("exportBackup").onclick=backupRecords;document.getElementById("importBackup").onclick=()=>document.getElementById("restoreBackup").click();document.getElementById("restoreBackup").onchange=e=>restoreRecords(e.target);document.getElementById("reset").onclick=()=>{if(confirm("전체 기록을 삭제할까요?")){st=base();save();admin()}}}
 render();})();

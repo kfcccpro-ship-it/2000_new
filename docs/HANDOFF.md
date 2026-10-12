@@ -73,3 +73,13 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - iPad compatibility regression SUCCESS
 - Kiosk home regression SUCCESS
 - GitHub Pages Deploy SUCCESS
+
+## v0.1.3 — 기존 배포본 유지·기록 보호·실행형 검증 (2026-10-12)
+- 기준 시작점: main 3066cc619601944101feccfcbd183cbf1b66b5a1 / VERSION 0.1.2. 이전 기능 및 localStorage 키 `wm2000pilot_v1` 유지.
+- 관리자에 JSON 학습기록 백업·복원 추가. 복원은 형식/범위 검사와 덮어쓰기 확인 후 수행. 사용자 승인 없는 기존 기록 삭제 금지.
+- 기존 DAY 50 데이터 40개, 8단어×5 STEP, 3회 신규+4회차 오답복습, 엄격 정답채점, 오답 재학습, Apple Pencil Scribble 방식 유지.
+- 복습 오답 0개일 때 완료 화면에 `0/0` 대신 `오답 없음`으로 명시.
+- Node.js VM에 실제 app.js/data 파일을 로딩하여 카드 제출·오답 따라쓰기 이벤트·재시험·진도·복습·재로드·백업 복원 상태 전이를 수행하는 의존성 없는 런타임 회귀검사 추가.
+- 주의: VM 포인터 이벤트 검사는 실제 iPadOS에서의 Apple Pencil/Scribble 인식률이나 Safari 다운로드 성공을 증명하지 않는다. 실제 두 iPad 기종에서의 수동 검증 필요.
+- 아직 DAY 49~1 교재 원문 데이터가 없다. 사용자 교재의 첫 번째 의미를 확인한 다음에만 신규 DAY 데이터를 작성한다. 추정 단어로 2000개를 채우지 않는다.
+- 다음 우선순위: (1) 실제 iPad Pro 10.5 및 iPad Air 13에서 한국어 Scribble/백업 확인, (2) DAY 49~1 정확한 원본 데이터 확보·40개/일 검증, (3) 확장 DAY 배포 및 자동 진도 회귀검사.

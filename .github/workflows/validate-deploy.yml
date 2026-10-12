@@ -23,6 +23,8 @@ jobs:
         run: node tests/validate.mjs
       - name: Syntax check
         run: node --check app.js
+      - name: iPad compatibility regression
+        run: node tests/ipad-compat.mjs
 
   deploy:
     needs: validate

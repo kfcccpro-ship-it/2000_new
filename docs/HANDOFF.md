@@ -65,3 +65,11 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - DAY 변경은 접힌 보조 메뉴로 이동.
 - 테스트 내부 기능과 관리자 기능은 그대로 유지.
 - 목표: 학생이 메인 화면에서 고민할 행동을 사실상 “테스트 시작” 하나로 제한.
+
+
+## v0.1.2 배포 성공
+- main: 98f720bff821656adfc0a3654d1f3dac50bca021
+- Validate SUCCESS
+- iPad compatibility regression SUCCESS
+- Kiosk home regression SUCCESS
+- GitHub Pages Deploy SUCCESS

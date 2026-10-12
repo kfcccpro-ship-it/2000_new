@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const VER="0.1.1",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
+const VER="0.1.2",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin");
 const DATA=window.WORD_DATA;let route="test";let st=load();
 function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null}}
 function load(){try{return Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){return base()}}
@@ -31,12 +31,27 @@ function setRoute(r){route=r;navTest.classList.toggle("active",r==="test");navAd
 navTest.onclick=()=>setRoute("test");navAdmin.onclick=()=>setRoute("admin");
 function render(){route==="admin"?admin():test()}
 function test(){if(st.current&&!st.current.done)return session();home()}
-function home(){let rv=isReview(),pool=reviewPool(),d=day(st.nextDay);
-app.innerHTML=`<section class="panel hero"><div><h1>${rv?"오늘은 오답 점검 DAY":"오늘은 DAY "+st.nextDay}</h1><p class="muted">영어를 보고 교재의 <b>첫 번째 한글 뜻 하나</b>를 Apple Pencil로 직접 씁니다.</p><div class="notice"><b>백강 고시체 가이드</b><br>가로형으로 반듯하게 · 자음을 또렷하게 · 세로획은 짧게 · 글자 크기는 일정하게.</div><div class="deviceNote">✏️ ${deviceProfile().label} · 13형 가로모드는 8단어를 4×2로 배치합니다.</div></div><div class="badge">${rv?"복습":"신규"}<small>${rv?pool.length+"단어":"40단어 · 8×5 STEP"}</small></div></section>
-<div class="grid2"><section class="panel"><h2>진도</h2><p class="muted">기본은 DAY 50부터 역순입니다. 파일럿 v0.1.1에는 DAY 50 데이터를 먼저 넣어 iPad 필기인식과 10.5형·13형 레이아웃을 함께 검증합니다.</p><div class="row"><select id="daySel">${Array.from({length:50},(_,i)=>50-i).map(n=>`<option value="${n}" ${n===st.nextDay?"selected":""}>DAY ${n}</option>`).join("")}</select><button class="secondary" id="saveDay">저장</button></div></section>
-<section class="panel"><h2>4일 리듬</h2><p class="muted">1~3일 신규 · 4일차는 앞선 3일의 오답만 재시험합니다.</p><button class="primary" id="start" style="width:100%;font-size:19px">${rv?"오답 점검 시작":"DAY "+st.nextDay+" 테스트 시작"}</button>${!rv&&!d?'<p style="color:var(--bad);font-weight:800;margin:10px 0 0">현재 파일럿 데이터는 DAY 50만 탑재되어 있습니다.</p>':""}</section></div>`;
-document.getElementById("saveDay").onclick=()=>{st.nextDay=+document.getElementById("daySel").value;save();home()};
-document.getElementById("start").onclick=()=>start();}
+function home(){
+  let rv=isReview(),pool=reviewPool(),d=day(st.nextDay),canStart=rv||!!d;
+  app.innerHTML=`<section class="kioskHome">
+    <div class="kioskEyebrow">${rv?"REVIEW DAY":"TODAY"}</div>
+    <div class="kioskDay">${rv?"오답 점검":"DAY "+st.nextDay}</div>
+    <div class="kioskMeta">${rv?pool.length+"단어":"40단어 · 8단어 × 5 STEP"}</div>
+    <button class="primary kioskStart" id="start" ${canStart?"":"disabled"}>${rv?"오답 점검 시작":"테스트 시작"}</button>
+    <div class="kioskHint">Apple Pencil로 한글 뜻 쓰기 → 인식 확인 → 제출</div>
+    <details class="kioskAdjust">
+      <summary>DAY 변경</summary>
+      <div class="kioskAdjustBody">
+        <select id="daySel">${Array.from({length:50},(_,i)=>50-i).map(n=>`<option value="${n}" ${n===st.nextDay?"selected":""}>DAY ${n}</option>`).join("")}</select>
+        <button class="secondary" id="saveDay">적용</button>
+      </div>
+      ${!rv&&!d?'<p class="kioskWarn">현재 파일럿은 DAY 50만 사용할 수 있습니다.</p>':""}
+    </details>
+    <div class="kioskCycle">신규 3일 · 4일차 복습</div>
+  </section>`;
+  document.getElementById("saveDay").onclick=()=>{st.nextDay=+document.getElementById("daySel").value;save();home()};
+  document.getElementById("start").onclick=()=>start();
+}
 function start(){if(isReview()){st.current={id:Date.now(),type:"review",wordKeys:reviewPool(),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}else{let d=day(st.nextDay);if(!d)return alert("v0.1.0 파일럿은 DAY 50만 먼저 검증합니다.");st.current={id:Date.now(),type:"new",bookDay:d.day,wordKeys:d.words.map(key),phase:"main",step:0,round:1,answers:{},everWrong:[],roundWrong:[],done:false}}save();session()}
 function phaseKeys(c){return c.phase==="main"?c.wordKeys:(c.retryKeys||[])}
 function slice(c){let a=phaseKeys(c),s=c.step*STEP;return a.slice(s,s+STEP)}

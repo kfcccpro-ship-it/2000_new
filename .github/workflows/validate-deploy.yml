@@ -33,6 +33,10 @@ jobs:
         run: node tests/a-design.mjs
       - name: DAY schedule and progressive learning regression
         run: node tests/learning-review.mjs
+      - name: Personal word import and source audit regression
+        run: node tests/personal-words.mjs
+      - name: Public package excludes unapproved textbook data
+        run: node tools/check-public-data.mjs
       - name: Real Chromium iPad viewport interaction regression
         run: node tests/browser-ipad-run.mjs
       - name: Archive browser viewport screenshots
@@ -64,7 +68,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html styles.css app.js manifest.webmanifest VERSION _site/
-          cp data/day50.js data/day49.js data/learning-day50.js data/learning-day49.js _site/data/
+          cp data/day50.js data/day49.js data/learning-day50.js data/learning-day49.js data/personal-words.js _site/data/
       - name: Upload Pages artifact
         if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v4

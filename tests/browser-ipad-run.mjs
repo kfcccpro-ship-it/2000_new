@@ -3,16 +3,21 @@ import http from "node:http";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {spawn,spawnSync} from "node:child_process";
+import os from "node:os";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const screenshotDir=path.join(root,"tests","screenshots");
 fs.mkdirSync(screenshotDir,{recursive:true});
-const bin=["google-chrome","google-chrome-stable","chromium","chromium-browser"]
+const bin=process.env.CHROME_BIN||["google-chrome","google-chrome-stable","chromium","chromium-browser"]
   .find(n=>spawnSync("which",[n],{encoding:"utf8"}).status===0);
 if(!bin)throw new Error("Chromium/Chrome not found on GitHub runner. Browser QA is required, not silently skipped.");
 const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".json":"application/json"};
 const server=http.createServer((req,res)=>{
   let uri=decodeURIComponent(new URL(req.url||"/","http://localhost").pathname);
+  if(uri==="/tests/private-pack.json"&&process.env.WM_PERSONAL_PACK){
+    res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});
+    res.end(fs.readFileSync(process.env.WM_PERSONAL_PACK));return;
+  }
   let file=path.resolve(root,"."+uri);
   if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end("Forbidden");return}
   fs.readFile(file,(err,data)=>{
@@ -23,11 +28,13 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
 const base="http://127.0.0.1:"+server.address().port;
+const profiles=[];
 const launch=(size,uri,extra=[])=>new Promise((resolve,reject)=>{
+  const profile=fs.mkdtempSync(path.join(os.tmpdir(),"wm2000-browser-"));profiles.push(profile);
   const args=["--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu",
     "--disable-extensions","--disable-background-networking","--hide-scrollbars",
     "--no-first-run","--no-default-browser-check","--window-size="+size,
-    "--user-data-dir=/tmp/wm2000-chromium-"+process.pid+"-"+size.replaceAll(",","-"),...extra,base+uri];
+    "--user-data-dir="+profile,...extra,base+uri];
   const child=spawn(bin,args,{stdio:["ignore","pipe","pipe"]});
   let stdout="",stderr="";
   const safety=setTimeout(()=>{child.kill("SIGKILL");reject(new Error("Chrome browser QA exceeded 70s"))},70000);
@@ -42,7 +49,8 @@ const launch=(size,uri,extra=[])=>new Promise((resolve,reject)=>{
 });
 try{
   for(const [name,size] of [["ipad-pro-10-landscape","1112,834"],["ipad-air-13-landscape","1366,1024"]]){
-    const output=await launch(size,"/tests/browser-ipad-qa.html",["--virtual-time-budget=23000","--dump-dom"]);
+    const packServer=process.env.WM_PERSONAL_PACK?"?privatePack=1":"";
+    const output=await launch(size,"/tests/browser-ipad-qa.html"+packServer,["--virtual-time-budget=45000","--dump-dom"]);
     if(!/<body[^>]*data-e2e-status="passed"/i.test(output)){
       const reason=output.match(/<div id="report">([^<]{0,450})/i)?.[1]||"missing passed status";
       throw Error(name+" browser interaction FAILED: "+reason);
@@ -55,5 +63,6 @@ try{
   }
 }finally{
   await new Promise(resolve=>server.close(resolve));
+  for(const profile of profiles)fs.rmSync(profile,{recursive:true,force:true});
 }
-console.log("PASS browser e2e: DAY49, progressive lesson, 40 exact answers, drafts, due origin, 15s clock persistence, iPad viewports");
+console.log("PASS browser e2e: DAY49 + imported DAY48, 40 exact answers, progressive lesson, preserved drafts/clock, due origin, 3+1 sessions, record backup/restore, iPad viewports");

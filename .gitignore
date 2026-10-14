@@ -1,0 +1,4 @@
+.private/
+_site/
+tests/screenshots/
+node_modules/

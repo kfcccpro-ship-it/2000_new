@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const VER="0.2.3",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin"),navHome=document.getElementById("navHome");
+const VER="0.2.4",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin"),navHome=document.getElementById("navHome");
 const DATA=window.WORD_DATA;let route="test";let st=load();let activeInterval=null;let revealTimers=[];
 function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null,study:null,reviewPlan:{},activeMode:null}}
 function load(){try{const s=Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"));if(!s.reviewPlan||typeof s.reviewPlan!=="object"||Array.isArray(s.reviewPlan))s.reviewPlan={};return s}catch(e){return base()}}
@@ -7,6 +7,7 @@ function save(){localStorage.setItem(KEY,JSON.stringify(st))}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function norm(s){return String(s??"").normalize("NFC").trim()}
 function day(d){return DATA.days.find(x=>x.day===+d)}
+function registeredDays(){return DATA.days.map(d=>d.day).sort((a,b)=>a-b).join("·")}
 function key(w){return w.day+":"+w.no}
 function byKey(k){let[d,n]=k.split(":").map(Number),dd=day(d);return dd?dd.words[n-1]:null}
 function isReview(){return st.sessionNo%4===0}
@@ -210,7 +211,7 @@ function home(){
         <span class="choiceArrow" aria-hidden="true">→</span>
       </button>
     </div>
-    ${!rv&&!d&&!activeStudy&&!activeEval?'<p class="kioskWarn" role="status">이 DAY의 단어는 아직 등록되지 않았습니다. 보호자 설정에서 DAY 49 또는 50을 지정하세요.</p>':""}
+    ${!rv&&!d&&!activeStudy&&!activeEval?'<p class="kioskWarn" role="status">이 DAY의 단어는 아직 등록되지 않았습니다. 보호자 설정에서 개인 단어 파일을 불러오거나 등록된 DAY를 지정하세요.</p>':""}
     <p class="modeHeroNote">학습과 평가는 따로 진행할 수 있어요.</p>
   </section>`;
   document.getElementById("startLearning").onclick=startLearning;
@@ -430,11 +431,30 @@ async function restoreRecords(input){
   }catch(e){document.getElementById("backupMsg").textContent="복원 실패: "+e.message;}
   finally{input.value="";}
 }
+async function importPersonalWords(input){
+  const file=input.files?.[0];if(!file)return;
+  try{
+    if(file.size>2*1024*1024)throw Error("단어 파일이 너무 큽니다(2MB 초과).");
+    const added=window.PERSONAL_WORDS.importPack(JSON.parse(await file.text()));
+    admin();document.getElementById("wordFileMsg").textContent="개인 단어 등록 완료 · DAY "+added.sort((a,b)=>a-b).join("·");
+  }catch(e){document.getElementById("wordFileMsg").textContent="등록 실패: "+e.message}
+  finally{input.value=""}
+}
+function exportPersonalWords(){
+  const msg=document.getElementById("wordFileMsg");
+  try{
+    const pack=window.PERSONAL_WORDS?.exportPack();if(!pack)throw Error("추가한 개인 단어 파일이 없습니다.");
+    const blob=new Blob([JSON.stringify(pack,null,2)],{type:"application/json;charset=utf-8"});
+    const uri=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=uri;a.download="wm2000-personal-words.json";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(uri),3000);msg.textContent="개인 단어 파일을 저장했습니다.";
+  }catch(e){msg.textContent="저장 실패: "+e.message}
+}
 function admin(){let hist=[...st.history].reverse(),stats=Object.entries(st.stats).map(([k,v])=>({k,...v,w:byKey(k)})).filter(x=>x.w).sort((a,b)=>b.wrong-a.wrong),tw=stats.reduce((a,x)=>a+x.wrong,0);app.innerHTML=`<section class="panel dayAdmin"><h1>학습 DAY 직접 설정</h1>
  <p class="muted">보호자가 DAY 번호를 직접 입력합니다. 기존 기록은 지우지 않습니다.</p>
  <div class="row"><label for="manualDay">DAY 번호</label><input id="manualDay" type="number" min="1" max="50" step="1" value="${st.nextDay}" inputmode="numeric"><button class="primary" id="applyManualDay" type="button">DAY 적용</button></div>
- <p class="small" id="dayMessage" role="status">등록된 교재 데이터: DAY 49·50 / 전체 50 DAY 중 2개</p>
- </section><section class="panel"><h1>관리자 대시보드</h1><p class="muted">이 기기의 localStorage에만 저장됩니다.</p></section><div class="metrics" style="margin-top:13px"><div class="metric"><small>완료 세션</small><b>${hist.length}</b></div><div class="metric"><small>누적 오답</small><b>${tw}</b></div><div class="metric"><small>오답 단어</small><b>${stats.filter(x=>x.wrong).length}</b></div><div class="metric"><small>다음 신규 DAY</small><b>${st.nextDay}</b></div></div><section class="panel" style="margin-top:13px"><h2>자주 틀린 단어</h2><div class="tableWrap">${stats.filter(x=>x.wrong).length?`<table class="table"><thead><tr><th>영어</th><th>정답</th><th>오답 횟수</th><th>최근 잘못 입력</th><th>다음 복습 예정</th></tr></thead><tbody>${stats.filter(x=>x.wrong).slice(0,30).map(x=>`<tr><td><b>${esc(x.w.english)}</b></td><td>${esc(x.w.answer)}</td><td>${x.wrong}</td><td>${esc(x.lastWrong||"-")}</td><td>${esc(st.reviewPlan?.[x.k]?.due||"미예약")}</td></tr>`).join("")}</tbody></table>`:"아직 오답이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>세션 기록</h2><div class="tableWrap">${hist.length?`<table class="table"><thead><tr><th>날짜</th><th>구분</th><th>범위</th><th>첫 평가</th><th>오답</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${h.date}</td><td>${h.type==="review"?"복습":"신규"}</td><td>${h.type==="review"?"오답만":"DAY "+h.bookDay}</td><td>${h.total-h.wrongCount}/${h.total}</td><td>${h.wrongCount}</td></tr>`).join("")}</tbody></table>`:"완료 기록이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>학습기록 백업 · 복원</h2><p class="muted">기록은 이 기기의 브라우저에만 저장됩니다. 기기 변경이나 데이터 삭제 전에 백업 파일을 보관하세요.</p><div class="row"><button class="secondary" id="exportBackup">백업 파일 저장 (.json)</button><button class="secondary" id="importBackup">백업 파일 복원</button><input id="restoreBackup" type="file" accept=".json,application/json" hidden></div><p id="backupMsg" role="status" class="small" aria-live="polite"></p></section><section class="panel" style="margin-top:13px"><button class="danger" id="reset">전체 기록 초기화</button></section>`;document.getElementById("applyManualDay").onclick=()=>{const n=Number(document.getElementById("manualDay").value),msg=document.getElementById("dayMessage");if(!Number.isInteger(n)||n<1||n>50){msg.textContent="DAY 1~50의 정수를 입력하세요.";return}if(!day(n)){msg.textContent="DAY "+n+" 데이터는 아직 없습니다. DAY 49 또는 DAY 50을 선택하세요.";return}if((st.current&&!st.current.done)||(st.study&&!st.study.done)){msg.textContent="진행 중인 학습을 먼저 완료한 뒤 DAY를 바꾸세요.";return}st.nextDay=n;save();admin()};document.getElementById("exportBackup").onclick=backupRecords;document.getElementById("importBackup").onclick=()=>document.getElementById("restoreBackup").click();document.getElementById("restoreBackup").onchange=e=>restoreRecords(e.target);document.getElementById("reset").onclick=()=>{if(confirm("전체 기록을 삭제할까요?")){st=base();save();admin()}}}
+ <p class="small" id="dayMessage" role="status">등록된 교재 데이터: DAY ${registeredDays()} / 전체 50 DAY 중 ${DATA.days.length}개</p>
+ </section><section class="panel"><h2>개인 단어 파일</h2><p class="muted">검증한 DAY 1~48 파일을 이 기기에 추가합니다. 학습기록과 기존 단어는 유지됩니다.</p><div class="row"><button class="secondary" id="importWords">단어 파일 불러오기 (.json)</button><button class="secondary" id="exportWords">개인 단어 파일 저장</button><input id="wordFile" type="file" accept=".json,application/json" hidden></div><p class="small" id="wordFileMsg" role="status" aria-live="polite">${esc(window.PERSONAL_WORDS?.error||"파일은 이 브라우저에만 저장됩니다. 기기를 바꿀 때 단어 파일도 함께 가져오세요.")}</p></section><section class="panel"><h1>관리자 대시보드</h1><p class="muted">이 기기의 localStorage에만 저장됩니다.</p></section><div class="metrics" style="margin-top:13px"><div class="metric"><small>완료 세션</small><b>${hist.length}</b></div><div class="metric"><small>누적 오답</small><b>${tw}</b></div><div class="metric"><small>오답 단어</small><b>${stats.filter(x=>x.wrong).length}</b></div><div class="metric"><small>다음 신규 DAY</small><b>${st.nextDay}</b></div></div><section class="panel" style="margin-top:13px"><h2>자주 틀린 단어</h2><div class="tableWrap">${stats.filter(x=>x.wrong).length?`<table class="table"><thead><tr><th>영어</th><th>정답</th><th>오답 횟수</th><th>최근 잘못 입력</th><th>다음 복습 예정</th></tr></thead><tbody>${stats.filter(x=>x.wrong).slice(0,30).map(x=>`<tr><td><b>${esc(x.w.english)}</b></td><td>${esc(x.w.answer)}</td><td>${x.wrong}</td><td>${esc(x.lastWrong||"-")}</td><td>${esc(st.reviewPlan?.[x.k]?.due||"미예약")}</td></tr>`).join("")}</tbody></table>`:"아직 오답이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>세션 기록</h2><div class="tableWrap">${hist.length?`<table class="table"><thead><tr><th>날짜</th><th>구분</th><th>범위</th><th>첫 평가</th><th>오답</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${h.date}</td><td>${h.type==="review"?"복습":"신규"}</td><td>${h.type==="review"?"오답만":"DAY "+h.bookDay}</td><td>${h.total-h.wrongCount}/${h.total}</td><td>${h.wrongCount}</td></tr>`).join("")}</tbody></table>`:"완료 기록이 없습니다."}</div></section><section class="panel" style="margin-top:13px"><h2>학습기록 백업 · 복원</h2><p class="muted">기록은 이 기기의 브라우저에만 저장됩니다. 기기 변경이나 데이터 삭제 전에 백업 파일을 보관하세요. 개인 단어 파일은 별도로 저장하고, 새 기기에서 단어 파일을 먼저 불러온 후 학습기록을 복원하세요.</p><div class="row"><button class="secondary" id="exportBackup">백업 파일 저장 (.json)</button><button class="secondary" id="importBackup">백업 파일 복원</button><input id="restoreBackup" type="file" accept=".json,application/json" hidden></div><p id="backupMsg" role="status" class="small" aria-live="polite"></p></section><section class="panel" style="margin-top:13px"><button class="danger" id="reset">전체 기록 초기화</button></section>`;document.getElementById("applyManualDay").onclick=()=>{const n=Number(document.getElementById("manualDay").value),msg=document.getElementById("dayMessage");if(!Number.isInteger(n)||n<1||n>50){msg.textContent="DAY 1~50의 정수를 입력하세요.";return}if(!day(n)){msg.textContent="DAY "+n+" 데이터는 아직 없습니다. 등록된 DAY "+registeredDays()+" 중에서 선택하거나 개인 단어 파일을 불러오세요.";return}if((st.current&&!st.current.done)||(st.study&&!st.study.done)){msg.textContent="진행 중인 학습을 먼저 완료한 뒤 DAY를 바꾸세요.";return}st.nextDay=n;save();admin()};document.getElementById("importWords").onclick=()=>document.getElementById("wordFile").click();document.getElementById("wordFile").onchange=e=>importPersonalWords(e.target);document.getElementById("exportWords").onclick=exportPersonalWords;document.getElementById("exportBackup").onclick=backupRecords;document.getElementById("importBackup").onclick=()=>document.getElementById("restoreBackup").click();document.getElementById("restoreBackup").onchange=e=>restoreRecords(e.target);document.getElementById("reset").onclick=()=>{if(confirm("전체 기록을 삭제할까요?")){st=base();save();admin()}}}
 // The first screen after every browser navigation/reload is ALWAYS the two-choice hero.
 // Never discard st.study, st.current, history, stats, or the absolute assessment clock.
 // User explicitly selects learning or evaluation to resume their saved activity.

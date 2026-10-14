@@ -54,7 +54,7 @@ const timeoutFail=setTimeout(()=>{
    document.body.dataset.e2eStatus="failed";
    document.getElementById("report").textContent="Timed out in browser QA";
  }
-},24000);
+},43000);
 try{
  // DAY49 is a real registered source, not a fabricated testing day.
  await mount(seedDay(49));
@@ -139,6 +139,124 @@ try{
  assert(state().stats["49:1"]?.lastWrong==="시간 초과","deadline failure recorded explicitly");
  assert(!!doc.querySelector(".focusReview"),"focus correction display visible");
  assert(doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+3,"no horizontal viewport overflow");
+
+ // Personal import uses only synthetic data in public CI; local QA can supply
+ // the audited, private DAY48 pack without putting its contents in Git/Pages.
+ let pack;
+ if(new URLSearchParams(location.search).has("privatePack")){
+   pack=await (await fetch("./private-pack.json")).json();
+ }else{
+   pack={format:"wm2000-personal-words",schema:1,days:[{day:48,words:[]}],learning:{day48:[]}};
+   for(let i=1;i<=40;i++){
+     const english="qa-word-"+i,answer="연습 "+i;
+     pack.days[0].words.push({day:48,no:i,english,answer,sourceFirstMeaning:answer,sourceFullMeaning:answer+", 다른 뜻",sourceOrdinal:1880+i});
+     pack.learning.day48.push({no:i,english,emoji:"📖",cue:"테스트용 카드",sentence:["독자 작성 예시", " 두 번째 문장"],middle:false});
+   }
+ }
+ const original49=JSON.stringify(win.WORD_DATA.days.find(d=>d.day===49));
+ const original50=JSON.stringify(win.WORD_DATA.days.find(d=>d.day===50));
+ // Import while DAY49 is unfinished: neither drafts, clock, history nor stats move.
+ await mount(seedDay(49));
+ doc.getElementById("startEvaluation").click();
+ const draft=active().querySelector("[data-in]");draft.value="진행 중 필기";draft.dispatchEvent(new win.Event("input",{bubbles:true}));
+ doc.getElementById("navAdmin").click();
+ const beforeImport=JSON.stringify(state());
+ async function uploadPack(value){
+   const file=new win.File([JSON.stringify(value)],"personal.json",{type:"application/json"});
+   const transfer=new win.DataTransfer();transfer.items.add(file);
+   const input=doc.getElementById("wordFile");input.files=transfer.files;
+   const original=input.onchange;
+   const completed=new Promise(resolve=>{input.onchange=async event=>{try{await original(event)}finally{resolve()}}});
+   input.dispatchEvent(new win.Event("change",{bubbles:true}));await completed;
+ }
+ await uploadPack(pack);
+ assert(doc.getElementById("wordFileMsg").textContent.includes("등록 완료"),"file-input import completed");
+ assert(JSON.stringify(state())===beforeImport,"personal import preserves all existing records and drafts");
+ assert(JSON.stringify(win.WORD_DATA.days.find(d=>d.day===49))===original49,"DAY49 unchanged after import");
+ assert(JSON.stringify(win.WORD_DATA.days.find(d=>d.day===50))===original50,"DAY50 unchanged after import");
+ assert(doc.getElementById("dayMessage").textContent.includes("48·49·50"),"registered DAY list is dynamic");
+ const storedPack=localStorage.getItem("wm2000personal_words_v1"),tampered=JSON.parse(JSON.stringify(pack));
+ tampered.days[0].words[0].answer+="!";
+ await uploadPack(tampered);
+ assert(doc.getElementById("wordFileMsg").textContent.includes("등록 실패"),"inconsistent first meaning rejected");
+ assert(localStorage.getItem("wm2000personal_words_v1")===storedPack&&JSON.stringify(state())===beforeImport,"failed import leaves data and records untouched");
+ await mount();
+ assert(state().current.drafts["49:1"]==="진행 중 필기","legacy draft survives import and reload");
+ doc.getElementById("startEvaluation").click();
+ assert(active().dataset.k==="49:1"&&active().querySelector("[data-in]").value==="진행 중 필기","legacy assessment resumes after import");
+
+ await mount(seedDay(48));
+ assert(doc.querySelector(".kioskMeta").textContent.includes("40단어"),"DAY48 has 40 words on home");
+ doc.getElementById("startLearning").click();
+ const words48=win.WORD_DATA.days.find(d=>d.day===48).words;
+ assert(doc.querySelector(".learningWord").textContent===words48[0].english,"DAY48 source learning card visible");
+ await sleep(4750);
+ assert(doc.getElementById("learnMeaning").textContent.includes(words48[0].answer)&&!doc.getElementById("sentenceLast").hidden,"DAY48 first meaning and custom example reveal");
+ doc.getElementById("nextStudy").click();await mount();doc.getElementById("startLearning").click();
+ assert(state().study.index===1&&doc.querySelector(".learningWord").textContent===words48[1].english,"DAY48 study resumes on second card");
+ selectEvaluation();
+ for(let i=0;i<40;i++){
+   assert(active().dataset.k==="48:"+(i+1),"DAY48 order "+(i+1));
+   writeAnswer(words48[i].answer);
+   assert(state().current.answers["48:"+(i+1)]?.result==="correct","DAY48 first-meaning exact answer "+(i+1));
+   if((i+1)%8===0){assert(!doc.getElementById("next").disabled,"DAY48 STEP unlocked");doc.getElementById("next").click()}
+ }
+ assert(state().nextDay===47&&state().current.done,"DAY48 completes and advances to 47");
+
+ // DAY50 -> 49 -> imported DAY48 -> fourth-session review, no new DAY47.
+ await mount(seedDay(50));
+ for(const n of [50,49,48]){
+   doc.getElementById("startEvaluation").click();
+   const words=win.WORD_DATA.days.find(d=>d.day===n).words;
+   assert(state().current.bookDay===n&&state().current.wordKeys.length===40,"descending new DAY "+n);
+   for(let i=0;i<40;i++){
+     writeAnswer(words[i].answer);
+     if((i+1)%8===0)doc.getElementById("next").click();
+   }
+   doc.getElementById("home").click();
+ }
+ assert(state().sessionNo===4&&state().nextDay===47,"three new sessions leave next DAY47");
+ assert(doc.querySelector(".kioskDay").textContent==="오답 복습","fourth session is review");
+ doc.getElementById("startEvaluation").click();
+ assert(state().history.at(-1).type==="review"&&state().nextDay===47&&state().sessionNo===5,"fourth review does not advance new DAY");
+ assert(doc.querySelector(".score").textContent==="오답 없음","empty review completes cleanly");
+ // Real download and file restore through the existing schema-1 controls.
+ doc.getElementById("navAdmin").click();
+ let captured;
+ const realCreate=win.URL.createObjectURL;win.URL.createObjectURL=blob=>{captured=blob;return realCreate.call(win.URL,blob)};
+ doc.getElementById("exportBackup").click();
+ const saved=JSON.parse(await captured.text());
+ assert(saved.schema===1&&saved.state.history.length===4,"schema1 backup includes DAY48 and all four sessions");
+ const transfer=new win.DataTransfer();transfer.items.add(new win.File([JSON.stringify(saved)],"records.json",{type:"application/json"}));
+ const input=doc.getElementById("restoreBackup");input.files=transfer.files;
+ const restoreHandler=input.onchange;
+ const restoreCompleted=new Promise(resolve=>{input.onchange=async event=>{try{await restoreHandler(event)}finally{resolve()}}});
+ input.dispatchEvent(new win.Event("change",{bubbles:true}));await restoreCompleted;
+ assert(doc.getElementById("backupMsg").textContent.includes("복원 완료")&&JSON.stringify(state())===JSON.stringify(saved.state),"DAY48 record backup restores without drift");
+ win.URL.createObjectURL=realCreate;
+ assert(doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+3,"personal import admin has no horizontal overflow");
+
+ // Fourth session must also review wrong imported words when DAY47 is absent.
+ const wrongReview=seedDay(47);wrongReview.sessionNo=4;
+ wrongReview.history=[50,49,48].map((n,i)=>({id:i+1,date:stamp(new Date()),type:"new",bookDay:n,total:40,wordKeys:Array.from({length:40},(_,j)=>n+":"+(j+1)),everWrong:n===48?["48:1"]:[],wrongCount:n===48?1:0,retryRounds:1}));
+ await mount(wrongReview);doc.getElementById("startEvaluation").click();
+ assert(state().current.type==="review"&&state().current.wordKeys.join(",")==="48:1","fourth review contains imported wrong word only, no new DAY47");
+ writeAnswer(words48[0].answer+"!");
+ assert(state().current.answers["48:1"].result==="wrong","DAY48 strict grading rejects changed meaning");
+ const canvas=doc.querySelector("[data-trace]"),box=canvas.getBoundingClientRect();
+ // Synthetic pen events exercise the real canvas handler; capture is stubbed
+ // because a programmatically dispatched pointer has no OS capture target.
+ const capture=canvas.setPointerCapture;canvas.setPointerCapture=()=>{};
+ for(const [type,x] of [["pointerdown",15],["pointermove",65],["pointerup",65]])canvas.dispatchEvent(new win.PointerEvent(type,{bubbles:true,pointerType:"pen",pointerId:1,isPrimary:true,pressure:.5,clientX:box.left+x,clientY:box.top+25}));
+ canvas.setPointerCapture=capture;
+ doc.querySelector("[data-tdone]").click();
+ const retry=doc.querySelector("[data-re]");retry.value=words48[0].answer;retry.dispatchEvent(new win.Event("input",{bubbles:true}));
+ doc.querySelector("[data-rsub]").click();
+ assert(state().current.answers["48:1"].relearnDone,"imported wrong word completes Pencil-style trace and re-entry");
+ doc.getElementById("next").click();
+ assert(state().current.phase==="retry"&&active().dataset.k==="48:1","DAY48 wrong word enters mandatory same-session retest");
+ writeAnswer(words48[0].answer);doc.getElementById("next").click();
+ assert(state().nextDay===47&&state().current.done&&state().history.at(-1).everWrong.includes("48:1"),"review records imported error and preserves next new DAY");
 
  document.body.dataset.e2eStatus="passed";
  document.getElementById("report").textContent="PASS "+logs.length+" checks";

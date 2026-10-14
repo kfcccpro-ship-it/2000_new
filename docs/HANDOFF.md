@@ -174,3 +174,17 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - `VERSION`/HTML css·script cache-busting `v=0.2.3`. 필요하면 `https://kfcccpro-ship-it.github.io/2000_new/?v=0.2.3`로 접속해 HTML URL 캐시도 분리 가능.
 - 회귀: 이전 `activeMode:study`로 저장된 v0.2.2의 기존 기록으로 새로고침 → 두 버튼 표시 → 학습 이어하기, 평가 오답·진도 이어하기, 미제출 한글 입력 유지, 15초 타이머 deadline 유지 및 시간 만료, iPad 1112x834/1366x1024 Chromium 동작.
 - 주의: 평가의 절대 마감시간은 기존 정책 그대로 유지하여 앱을 떠나 있는 시간이 타이머에 포함됨. 별도의 일시정지/재개 정책 변경은 하지 않음.
+
+## v0.2.4 — DAY48 원본 대조 및 개인 단어 파일 연결 (2026-10-14)
+- 기준 main `6536b9f3b56030e529c9aeaf440639b13ea82c2b`, v0.2.3.
+- 원본 HTML 2,000건과 제공 PDF48쪽을 시각 대조: DAY48 1881~1920의 번호·철자·첫 의미 40/40 일치. 독립 PDF 전사·두 원본 SHA-256을 재현 감사에 사용.
+- 앞의 괄호 부연 설명만 채점답에서 생략하고 내부 괄호는 보존. 원문 첫 의미/전체 의미/순번 보관, 자체 학습 단서·예문 40개 작성.
+- 저장소는 public이고 main→Pages 자동 배포. 새 교재 DAY의 공개 이용권한은 미확인. **DAY48 원문과 상세 대조표는 Git/Pages에 넣지 않음**. 기본 공개 데이터는 DAY49·50의 80개. 사용자가 검증 DAY48 JSON을 가져온 브라우저에서는 120개 사용.
+- `data/personal-words.js`를 app.js 전 로드. 보호자 설정의 JSON 가져오기/내보내기, 40개/DAY·첫 의미·순번·카드 구조 검사, 동일 DAY 내용 변경 차단, 저장 실패 시 기존 데이터 유지. 실행 가능한 스크립트는 가져오지 않음.
+- 추가 단어 저장키 `wm2000personal_words_v1`. 기존 `wm2000pilot_v1` 및 schema=1 학습기록 백업 불변. 기기 이동은 개인 단어 파일 먼저 → 학습기록 백업 복원. 전체 기록 초기화는 기존 동작이며 개인 단어 파일은 지우지 않음.
+- 등록된 DAY 표시는 실제 로딩된 목록으로 계산. 학습/평가 미제출 답·이어하기·15초 절대마감·오답 재학습/재시험·8개×5STEP·3회 신규+4회 복습·3/7/14 간격 그대로.
+- `tools/prepare-pdf-review.py`: PDF 셀 추출+렌더 이미지+미확인 대조표. `tools/build-word-pack.mjs`: 2,000개 순번과 독립 PDF 검증·해시·카드 검사 후 개인 JSON/감사표 생성. 미확인/불일치면 실패. DAY47~1은 아직 미검증.
+- `tools/check-public-data.mjs` CI 검사: 신규 원문 DAY·PDF·개인 JSON/검증표의 공개 반영 차단. 공개 허락 근거 확보 뒤에만 검사 정책 변경.
+- 상세 절차 `docs/DATA_IMPORT.md`, 데이터 검증 요약 `docs/DAY48_VERIFICATION.md`, 새 채팅 진입점 `PROJECT_HANDOFF_LATEST.md`.
+- 로컬 최종 검증: 기존 Node 회귀 전체 및 개인 데이터 검증 통과. 실제 Chromium 두 viewport에서 개인 DAY48 40개 원문 정확 제출, 5STEP, 학습 이어하기, DAY49 미제출 답·기록/마감시각 유지, 데이터 변조 거부, DAY50→49→48→4회차 복습, DAY48 오답 따라쓰기·재입력·당일 재시험, schema1 백업·복원 통과. 공개 CI용 가상 DAY48 검사도 별도 통과.
+- 공개 코드에는 교재 DAY48 원문이 없으며 개인 파일 경로를 Actions에 전달하지 않음. 실물 iPadOS Safari/Apple Pencil 한국어 인식은 아직 수동 확인 필요.

@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const VER="0.2.4",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin"),navHome=document.getElementById("navHome");
+const VER="0.2.5",KEY="wm2000pilot_v1",STEP=8,app=document.getElementById("app"),navTest=document.getElementById("navTest"),navAdmin=document.getElementById("navAdmin"),navHome=document.getElementById("navHome");
 const DATA=window.WORD_DATA;let route="test";let st=load();let activeInterval=null;let revealTimers=[];
 function base(){return{nextDay:50,sessionNo:1,history:[],stats:{},current:null,study:null,reviewPlan:{},activeMode:null}}
 function load(){try{const s=Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||"{}"));if(!s.reviewPlan||typeof s.reviewPlan!=="object"||Array.isArray(s.reviewPlan))s.reviewPlan={};return s}catch(e){return base()}}

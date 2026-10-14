@@ -65,4 +65,4 @@ try{
   await new Promise(resolve=>server.close(resolve));
   for(const profile of profiles)fs.rmSync(profile,{recursive:true,force:true});
 }
-console.log("PASS browser e2e: DAY49 + imported DAY48, 40 exact answers, progressive lesson, preserved drafts/clock, due origin, 3+1 sessions, record backup/restore, iPad viewports");
+console.log("PASS browser e2e: DAY49 + imported DAY48, 40 exact answers, progressive lesson, preserved drafts/clock, due origin, 3+1 sessions, record backup/restore, iPad viewports"+(process.env.WM_PERSONAL_PACK?" + supplied full-corpus structure/DAY1 flow":""));

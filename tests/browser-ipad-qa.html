@@ -185,6 +185,23 @@ try{
  doc.getElementById("startEvaluation").click();
  assert(active().dataset.k==="49:1"&&active().querySelector("[data-in]").value==="진행 중 필기","legacy assessment resumes after import");
 
+ if(pack.days.length===48){
+   const corpus=win.WORD_DATA.days.slice().sort((a,b)=>b.day-a.day);
+   assert(corpus.length===50&&corpus.reduce((sum,item)=>sum+item.words.length,0)===2000,"full private pack exposes 50 DAY and 2,000 words in the browser");
+   assert(corpus.every((item,index)=>item.day===50-index&&item.words.length===40),"every browser DAY is contiguous and contains 40 words");
+   assert(corpus.every(item=>item.words.every((word,index)=>word.day===item.day&&word.no===index+1&&(word.sourceOrdinal===undefined||word.sourceOrdinal===(item.day-1)*40+index+1))),"all browser word IDs and available source ordinals are stable");
+   await mount(seedDay(1));
+   assert(doc.querySelector(".kioskDay")?.textContent.includes("DAY 1"),"lowest imported DAY is selectable in the browser");
+   doc.getElementById("startEvaluation").click();
+   const words1=win.WORD_DATA.days.find(item=>item.day===1).words;
+   for(let i=0;i<40;i++){
+     assert(active().dataset.k==="1:"+(i+1),"DAY1 browser order "+(i+1));
+     writeAnswer(words1[i].answer);
+     if((i+1)%8===0)doc.getElementById("next").click();
+   }
+   assert(state().current.done&&state().history.at(-1).bookDay===1,"DAY1 completes all five browser STEP groups");
+ }
+
  await mount(seedDay(48));
  assert(doc.querySelector(".kioskMeta").textContent.includes("40단어"),"DAY48 has 40 words on home");
  doc.getElementById("startLearning").click();

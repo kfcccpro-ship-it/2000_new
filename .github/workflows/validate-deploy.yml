@@ -22,7 +22,9 @@ jobs:
       - name: Validate pilot
         run: node tests/validate.mjs
       - name: Syntax check
-        run: node --check app.js
+        run: |
+          node --check app.js
+          python3 -m py_compile tools/*.py
       - name: iPad compatibility regression
         run: node tests/ipad-compat.mjs
       - name: Kiosk home regression

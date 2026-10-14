@@ -1,14 +1,14 @@
-# DAY48 및 DAY47~1 개인 데이터 연결 절차
+# DAY1~48 통합 개인 데이터 연결 절차
 
-v0.2.4부터 보호자 설정의 **단어 파일 불러오기**로 검증한 개인 JSON을 추가한다.
-기본 공개 배포 데이터는 DAY49·50의 80개이고, 검증된 DAY48 파일을 불러온 기기는 120개를 사용한다.
+v0.2.5부터 보호자 설정의 **단어 파일 불러오기**로 DAY1~48 통합 개인 JSON을 추가한다.
+기본 공개 배포 데이터는 DAY49·50의 80개이고, 통합팩을 불러온 기기는 DAY1~50의 2,000개를 사용한다.
 추가 단어는 `wm2000personal_words_v1`, 기존 기록은 `wm2000pilot_v1`에 각각 보관한다.
 
 ## 사용 방법
 
-1. 같은 브라우저에서 보호자 설정 → 단어 파일 불러오기 → 검증된 DAY48 JSON 선택.
-2. 등록 DAY가 48·49·50인지 확인한다. DAY49 완료 후 DAY48로 이어진다.
-3. 바로 DAY48을 시작하려면 진행 중인 학습·평가를 완료하고 DAY 번호에 48을 적용한다.
+1. 같은 브라우저에서 보호자 설정 → 단어 파일 불러오기 → `WM2000_DAY1-48_개인용_검증팩.json` 선택.
+2. 등록 DAY가 1~50인지 확인한다. DAY49 완료 후 DAY48부터 DAY1까지 이어진다.
+3. 특정 DAY를 시작하려면 진행 중인 학습·평가를 완료하고 보호자 설정에서 DAY 번호를 적용한다.
 4. 기기를 바꿀 때 개인 단어 파일과 학습기록 백업을 둘 다 보관한다. 새 기기에서 단어 파일을 먼저 불러온 뒤 기록을 복원한다.
 
 기존 DAY49·50, 저장 중인 기록, 미제출 답안, 절대 타이머, 8단어 STEP,
@@ -16,13 +16,38 @@ v0.2.4부터 보호자 설정의 **단어 파일 불러오기**로 검증한 개
 이미 가져온 DAY의 철자·채점답 변경은 기록 보호를 위해 차단한다.
 개인 데이터 등록으로 진행 중인 DAY를 자동 변경하지 않는다.
 
-## 반복 검증
+## 전체 일괄 검증·생성
 
 원본 HTML의 옛 `day` 필드는 30일 분할값이므로 사용하지 않는다.
 정렬된 원래 순번으로 계산한다: `DAY = floor((순번-1)/40)+1`.
 예: DAY48=1881~1920. DAY47=1841~1880. DAY1=1~40.
 
 원본은 공개 저장소 밖에 보관한다. 아래 산출물은 `.private/`에만 생성한다.
+
+```bash
+python3 tools/audit-private-corpus.py \
+  --html /path/to/original.html --pdf /path/to/original.pdf \
+  --first-day 1 --last-day 47 --output .private/bulk-audit
+
+python3 tools/render-private-audit-sheets.py \
+  --audit .private/bulk-audit/corpus-audit.json --pdf /path/to/original.pdf \
+  --output .private/bulk-audit/review-sheets
+```
+
+자동 대조는 순번·철자와 첫 의미 일치를 검사한다. 불일치 행은 렌더 검토표로 직접 확인하고,
+검토자·날짜·감사 해시·예외 근거를 private resolution JSON에 기록한다. 자동 추출만으로
+`visuallyReviewed`를 표시하지 않는다.
+
+```bash
+python3 tools/build-private-corpus-pack.py \
+  --audit .private/bulk-audit/corpus-audit.json \
+  --resolution .private/bulk-audit/visual-resolution.json \
+  --day48 .private/DAY48_personal.json --output .private/full-pack
+```
+
+감사 파일이나 불일치 집합이 시각 검토 뒤 변경되면 해시 검사에서 생성을 중단한다.
+
+## 단일 DAY 재검증
 
 ```bash
 python3 tools/prepare-pdf-review.py \
@@ -55,7 +80,7 @@ node tools/build-word-pack.mjs \
 이 전처리는 데이터 작성 규칙이며, 제출된 답의 채점은 기존대로 NFC+앞뒤 공백 제거만 한다.
 
 생성 파일은 `DAY47_personal.json`, `DAY47_audit.json`이다.
-개인 JSON을 가져오면 기존 개인 DAY와 병합된다. 47→1을 같은 순서로 반복한다.
+개인 JSON을 가져오면 기존 개인 DAY와 병합된다. 통합팩 중 특정 DAY를 재검증할 때 사용한다.
 대조표는 자기 서명이므로 진위에 대한 암호학적 인증이 아니다. 원본과 함께 보관한다.
 
 ## 공개 이용권한 확인
@@ -68,7 +93,7 @@ node tools/build-word-pack.mjs \
 - 공식 안내: https://word.etoos.com/information
 - 이투스북: https://www.etoos.com/bookstore/book/
 
-따라서 이번 공개 커밋에는 새 DAY48 단어 원문·PDF·전체 HTML·40행 대조표를 포함하지 않는다.
+따라서 공개 커밋에는 DAY1~48 단어 원문·PDF·전체 HTML·개인팩·상세 대조표를 포함하지 않는다.
 개인 JSON에는 `permission-unconfirmed / personal-device` 상태를 기록한다.
 공개화하려면 권리자 허락 자료에서 판본, 대상 내용, 공개 Git/Pages, 복제·전송·변형,
 허용기간·출처 표시 등을 확인하고 그 근거와 범위를 기록해야 한다.
@@ -84,10 +109,11 @@ node tools/build-word-pack.mjs \
 node tests/personal-words.mjs
 node tests/browser-ipad-run.mjs
 # 개인 검증팩을 이 로컬 실행에만 연결할 때:
-WM_PERSONAL_PACK=.private/DAY48_personal.json node tests/browser-ipad-run.mjs
+WM_PERSONAL_PACK=.private/full-pack/WM2000_DAY1-48_개인용_검증팩.json node tests/browser-ipad-run.mjs
 ```
 
 Chrome 자동 검색이 어려우면 `CHROME_BIN=/absolute/path/to/chrome` 지정 가능.
 로컬 개인 JSON은 테스트 서버에만 제공되고 CI/Git에 업로드하지 않는다.
-공개 CI는 같은 DAY48 구조의 **가상 단어**로 가져오기·40개 제출·3+1회 복습·백업 복원을 검사한다.
+로컬 통합팩 검사에서는 50 DAY·2,000개 구조와 DAY1 40개 실제 제출까지 추가로 검사한다.
+공개 CI는 DAY48 구조의 **가상 단어**로 가져오기·40개 제출·3+1회 복습·백업 복원을 검사한다.
 1112×834/1366×1024 Chromium 검사는 실제 Safari/Apple Pencil 한국어 인식률을 증명하지 않는다.

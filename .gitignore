@@ -2,3 +2,5 @@
 _site/
 tests/screenshots/
 node_modules/
+__pycache__/
+*.pyc

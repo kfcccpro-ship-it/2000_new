@@ -28,5 +28,8 @@ Word Master 수능 2000 기반 iPad Apple Pencil 영어→한글 필기평가 �
 - v0.2.3: 강제 새로고침·앱 재진입은 항상 학습/평가 히어로부터 표시. 단어 진도·채점·필기 입력은 버튼 선택 시 이어하기.
 
 - v0.2.4: DAY48 원본 HTML·PDF 대조 완료. 공개 재배포 허락 확인 전에는 보호자 설정의 개인 JSON 가져오기로 연결. 기본 80개, 개인 DAY48 등록 후 120개. DAY47~1 반복 검증·파일 생성 도구와 공개 데이터 차단 CI 추가.
+
+- v0.2.5: DAY1~47 1,880개 순서·철자 전수 대조, 첫 뜻 자동 일치 1,700개와 원본 차이 180개 렌더 이미지 검토. DAY1~48 통합 개인 검증팩을 가져오면 공개 DAY49~50과 합쳐 50 DAY·2,000개를 사용한다. 교재 데이터는 권한 확인 전까지 GitHub/Pages에 포함하지 않는다.
 - 개인 파일 및 데이터 확장: [docs/DATA_IMPORT.md](docs/DATA_IMPORT.md).
+- 전체 검증 요약: [docs/FULL_CORPUS_VERIFICATION.md](docs/FULL_CORPUS_VERIFICATION.md).
 - 새 채팅 인계: [PROJECT_HANDOFF_LATEST.md](PROJECT_HANDOFF_LATEST.md).

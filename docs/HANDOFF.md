@@ -188,3 +188,15 @@ v0.1은 **iPadOS Apple Pencil Scribble**을 우선 사용한다.
 - 상세 절차 `docs/DATA_IMPORT.md`, 데이터 검증 요약 `docs/DAY48_VERIFICATION.md`, 새 채팅 진입점 `PROJECT_HANDOFF_LATEST.md`.
 - 로컬 최종 검증: 기존 Node 회귀 전체 및 개인 데이터 검증 통과. 실제 Chromium 두 viewport에서 개인 DAY48 40개 원문 정확 제출, 5STEP, 학습 이어하기, DAY49 미제출 답·기록/마감시각 유지, 데이터 변조 거부, DAY50→49→48→4회차 복습, DAY48 오답 따라쓰기·재입력·당일 재시험, schema1 백업·복원 통과. 공개 CI용 가상 DAY48 검사도 별도 통과.
 - 공개 코드에는 교재 DAY48 원문이 없으며 개인 파일 경로를 Actions에 전달하지 않음. 실물 iPadOS Safari/Apple Pencil 한국어 인식은 아직 수동 확인 필요.
+
+## v0.2.5 — DAY1~47 일괄 검증 및 2,000개 개인 연결 (2026-10-14)
+
+- 사용자 HTML 2,000행과 PDF 1~47쪽을 가변 행 높이·문자 좌표 기준으로 대조했다. DAY1~47 1,880개 영단어의 순서·철자는 1,880/1,880 일치했다.
+- 첫 뜻은 1,700개가 자동 일치했다. HTML·PDF 표현이 다른 180개는 18장의 행 단위 PDF 검토표로 전부 확인했다. 글꼴 문자 매핑 오류와 명백한 오기 후보는 private resolution에 근거를 남겼다.
+- 기존 DAY48 검증팩을 결합해 DAY1~48 1,920개 통합 개인팩을 생성했다. 공개 내장 DAY49~50과 합치면 앱에서 DAY1~50, 총 2,000개다.
+- 통합팩 학습 카드는 사실 오류를 피하기 위해 첫 뜻 회상형 기본 카드로 생성했다. DAY48의 기존 자체 단서·예문은 유지했다. 향후 내용 품질 개선은 채점답과 분리해 진행한다.
+- 기존 `wm2000pilot_v1`, schema 1 백업, NFC+trim 엄격 채점, 8개×5STEP, 3회 신규·4회차 복습, 오답 따라쓰기·재입력·당일 재시험, 3/7/14일 예약은 변경하지 않았다.
+- 실제 Chromium에 통합팩을 불러와 50 DAY·2,000개, 모든 DAY 40개, DAY1의 40개 정답 제출과 5STEP 완료, DAY48 흐름, 4회차 복습, 백업 복원을 1112×834 및 1366×1024에서 확인했다.
+- 자동화: `tools/audit-private-corpus.py`, `tools/render-private-audit-sheets.py`, `tools/build-private-corpus-pack.py`. 상세 통계는 `docs/FULL_CORPUS_VERIFICATION.md`, 재생성·불러오기 절차는 `docs/DATA_IMPORT.md`.
+- 저작권·이용권한 미확인 상태를 유지한다. 원본, 통합팩, 감사 JSON, 행 이미지에는 `permission-unconfirmed / personal-device`를 적용하고 `.private/` 밖이나 공개 Git/Pages에 넣지 않는다.
+- 남은 수동 검사: 실제 iPad Safari에서 개인팩 불러오기, Apple Pencil/Scribble, 화면 회전, 파일 내보내기·재가져오기. Chromium viewport 검사는 실기기 필기인식을 증명하지 않는다.
